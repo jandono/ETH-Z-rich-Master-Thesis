@@ -1,0 +1,18 @@
+\chapter{Continuous Normalizing Flows}
+
+% They further show the connection between Neural ODEs and Normalizing Flows for density estimation, and refer to Neural ODEs for density estimation as Continuous Normalizing Flows. They perform density estimation by taking a simple distribution and transforming it to a complex one via the Change of Variables formula. They also show that by moving to continuous transformations, the change in log probability can now be obtained by calculating the trace of the Jacobian instead of calculating the log determinant, which happens in the discrete case. Put into equations, in NF the change in log probability due to some transformation  is given by:
+
+% $$ z_{1} = f(z_{0}) $$
+% $$ \log p(z_{1}) = \log p(z_{0}) − \log \left \lvert det \frac{\partial f}{\partial z_{0}} \right \rvert $$
+
+% In CNF the change in the variable  and the log probability would be given by:
+				
+% $$ \frac{d z(t)}{d t} = f(z(t), t) $$
+
+% $$ \frac {\partial \log p(z(t))} {\partial t} = −Tr \left( \frac{d f}{d z(t)} \right) $$
+
+% Then the total change in log density is given by:
+
+% $$ \log p(z(t_1)) = \log p(z(t_0)) − \int_{t_0}^{t_1} Tr \left( \frac{d f}{d z(t)} \right) dt $$	
+	
+% This allows for better scaling as calculating the determinant is generally a $$ O(N^{3}) $$ in comparison to the $$ O(N) $$ complexity of the Trace operator, where N is the dimension of a squared matrix. The complexity of the entire expression is still $$ O(N^{2}) $$ due to the Jacobian. However, in a follow up paper Grathwohl, Will, et al. [14], further optimize the above method by showing that they can get unbiased estimates of the Trace, by using Hutchinson’s trace estimator [16] and leveraging efficient calculation of vector-jacobian products, therefore reducing the complexity of the entire method. According to the authors, this allows for completely unrestricted neural net architectures.
