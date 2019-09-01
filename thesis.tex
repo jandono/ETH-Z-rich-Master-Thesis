@@ -57,6 +57,11 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
+%% Used for additional citation options
+\usepackage{natbib}
+\setcitestyle{numbers,open={[},close={]},comma}
+\bibliographystyle{abbrvnat}
+
 %% Some more packages that you may want to use.  Have a look at the
 %% file, and consult the package docs for each.
 \input{extrapackages}
@@ -110,15 +115,15 @@
 \mainmatter
 
 %% Your real content!
-\input{introduction}
-\input{limitations}
-\input{related_work}
-\input{neural_odes}
-\input{neural_odes_for_lm}
-\input{c_normalizing_flows}
-\input{c_normalizing_flows_for_lm}
-\input{models}
-\input{experiments}
+\input{chapters/introduction}
+\input{chapters/limitations}
+\input{chapters/related_work}
+\input{chapters/neural_odes}
+\input{chapters/neural_odes_for_lm}
+\input{chapters/c_normalizing_flows}
+\input{chapters/c_normalizing_flows_for_lm}
+\input{chapters/models}
+\input{chapters/experiments}
 
 \appendix
 
@@ -126,7 +131,7 @@
 
 \backmatter
 
-\bibliographystyle{plain}
+% \bibliographystyle{plain}
 \bibliography{refs}
 
 \includepdf[pages={-}]{declaration-originality.pdf}

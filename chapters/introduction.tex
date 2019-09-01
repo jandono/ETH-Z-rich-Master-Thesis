@@ -1,0 +1,31 @@
+\chapter{Introduction}
+
+Anything we see or do, can be described and contained within a sequence of words, meaning that the entire complexity of the world can be embedded in a piece of text. This is exactly what makes text and textual communication so important in our daily lives. Additionally, this is also what makes text processing and textual communication so complex for machines. Namely, the area of Computer Science that deals with these problems is called Natural Language Processing (NLP). NLP \textcolor{red}{NLP staj vo abbreviations nekade} is a vast area with many subcategories, but without doubt, one of its core and most vital subcategories is text understanding and text generation.
+
+In NLP, the tools that are used for text generation are called Language Models (LM) \textcolor{red}{stavi go LM vo abbreviations}. Let's consider the following sentence:
+
+\begin{center}
+    \emph{Look at all those clouds, it is going to ...}
+\end{center}
+
+Given the sentence above as a context, a Language Model will then try to estimate what is the most likely word to end the sentence. From a mathematical point of view, LMs try to learn a context conditioned probability distribution over a vocabulary. This means that given a vocabulary of available words and a sequence of words that represents the history or the context, a Language Model processes the context and returns a discrete probability distribution over the vocabulary. 
+
+\begin{displaymath}
+    P(w | w_{1..i-1})
+\end{displaymath}
+
+Here $w_{1..i-1}$, is the context, often denoted as simply $ h $, and $ w $ is a discrete random variable that represents the vocabulary. We can then proceed with generating the next word by simply selecting the word with highest probability.
+
+\begin{displaymath}
+    \hat{w} = argmax_w P(w | w_{1..i-1})
+\end{displaymath}
+
+However, very often we do not want to only generate a single word given a context, but instead we want to generate whole sequences. Therefore, the LMs can also be seen as tools that model the joint probability distribution over a textual sequence. Or mathematically speaking:
+
+\begin{displaymath}
+    P(w_1, ..., w_n) = \prod_i^n P(w_i | w_{1..i-1})
+\end{displaymath}
+
+First LMs were count based and called N-grams \citep{martin2009speech}. However, with the recent advances in Deep Learning, LMs based on Neural Networks are currently dominating the field. Since the first Neural Language Model \citep{bengio2003neural} which was based on Feedforward Neural Networks, things have evolved and now Recurrent Neural Networks (RNN) \citep{mikolov2010recurrent} \textcolor{red}{vo abbrevations stavaj} are the standard. Additionally, as neural networks are trained with gradient based methods and back-propagation \citep{rumelhart1988learning}, people have figured out that RNNs, when processing long contexts can suffer from the vanishing or exploding gradients problem \citep{hochreiter1998vanishing, pascanu2012understanding, pascanu2013difficulty}. Therefore, Vanilla RNNs were substituted with Long short-term Memory (LSTM) \citep{hochreiter1997long} based RNNs. LSTMs alleviate the vanishing gradient problem and additionally gradient clipping \citep{pascanu2013difficulty} takes care of the exploding gradients problem. For the past few years, this has been a goto method for commercial Language Modelling.
+
+In this thesis, I I firstly give an overview of the current limitations of Language Modelling. I then describe how previous work have tried to break these limitations. Then, I introduce a novel idea for overcoming the previously mentioned limitations of Language Modelling. Towards the end, I describe the architecture of the models created in the scope of this thesis, as well as present the results from my experiments. Finally, I conclude my findings and suggest possible future work.
