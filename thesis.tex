@@ -62,6 +62,12 @@
 \setcitestyle{numbers,open={[},close={]},comma}
 \bibliographystyle{abbrvnat}
 
+%% Used for diagonal fractions
+\usepackage{nicefrac}
+
+%% Used for large integral symbols
+\usepackage{bigints}
+
 %% Some more packages that you may want to use.  Have a look at the
 %% file, and consult the package docs for each.
 \input{extrapackages}
@@ -119,9 +125,8 @@
 \input{chapters/limitations}
 \input{chapters/related_work}
 \input{chapters/neural_odes}
-\input{chapters/neural_odes_for_lm}
 \input{chapters/c_normalizing_flows}
-\input{chapters/c_normalizing_flows_for_lm}
+\input{chapters/cnfs_language_modelling}
 \input{chapters/models}
 \input{chapters/experiments}
 

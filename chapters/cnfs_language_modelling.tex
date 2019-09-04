@@ -1,0 +1,66 @@
+\chapter{CNFs for Language Modelling}
+\label{chapter:cnf_lm}
+
+\section{Introduction}
+\label{section:cnf_lm:introduction}
+
+It was previously shown how Normalizing Flows are a powerful technique to distort simple distributions into complex ones. Until recently this was only usable on small toy datasets, however, due to the advances in \citet{chen2018neural} and \citet{grathwohl2018ffjord} and moving to the continuous domain, it seems like a viable technique for solving more complex problems.
+
+In this chapter I show several different ways of incorporating Continuous Normalizing Flows in language modelling and I discuss both their theoretical and practical implications.
+
+\section{Regression over word embeddings}
+\label{section:cnf_lm:regression}
+
+One possible approach is to take the final hidden state $ h $ from an RNN and use it to parameterize a simple distribution, for example a Multivariate Gaussian, to obtain $ z_0 \sim \mathcal{N} (h, \ I) $. We can then use CNFs to perform transformations on both $ z_0 $ and its log density at the same time. The goal is to transform $ z_0 $ into the embedding of the word we are trying to predict.
+
+Let $ V $ be the vocabulary, $ h $ be the final hidden state, $ d $ be both the hidden state and the embedding dimensionality and $ e_w^* \in R^{d} $ be the word embedding of the ground truth word. Furthermore, let $ \mathcal{N}( \ . \ ; \ h, \ I) $ be the probability density function of a Multivariate Gaussian with mean $ h $ and covariance identity matrix and $ f $ be a neural network architecture parametrizing the gradient as described in chapters \ref{chapter:ode} and \ref{chapter:cnf}. Then:
+
+\begin{align}
+    \label{equation:cnf_lm:regression:regression_word_embedding}
+    \begin{split}
+        z_{t_0} &\sim \mathcal N(h, I) \\
+        \log p(z_{t_0}) &= \log \mathcal N(z_{t_0}; h, I) \\
+        z_{t_1}, \Delta \log p (z_t) &= cnf(z_{t_0}, \vec{0}, f) \\
+        \log p (z_{t_1}) &= \log p(z_{t_0}) -  \Delta \log  p (z_t)
+    \end{split}
+\end{align}
+
+We can then treat the problem as a regression problem over word embeddings, i.e. we try to obtain a $ z_{t_1} $ as close as possible to $ e_w^* $. We can achieve that by assuming some distribution on the error and then train by minimizing the negative log likelihood. One possible choice for such a distribution is the Von Mises-Fisher as proposed by \citet{kumar2018mises}.
+
+Let $ e_w^* $ be the ground truth embedding and $ e_w $ be the predicted embedding. The density of the predicted embedding given the ground truth embedding is given by
+
+\begin{displaymath}
+    p(e_w; e_w^*) = vMF(e_w; e_w^*) = C_m(\| e_w^* \|) e^{e_w^{*T} e_w},
+\end{displaymath}
+
+where $ C_m $ is the normalization constant and is defined as
+
+\begin{displaymath}
+    C_m(k) = \frac{ k^{m/2 - 1} } { (2\pi)^{m/2} I_{m/2 - 1}(k) }.
+\end{displaymath}
+
+$ I_v $ is a Bessel function of the first kind of order $ v $ and $ m $ is the dimensionality of the embeddings. The Negative Log-Likelihood then becomes
+
+\begin{displaymath}
+    NLLvMF(e_w; e_w^*) = - \log C_m(|| e_w ||) - e_w^T e_w^*.
+\end{displaymath}
+
+Consequently, by taking \ref{equation:cnf_lm:regression:regression_word_embedding} into account the loss becomes
+
+\begin{displaymath}
+    loss =  NLLvMF(z_1; \ e_w^*).
+\end{displaymath}
+
+Even though we do not explicitly use $ \log p(z_{t_1}) $ for training, at the end of this process we end up with a continuous probability distribution over the entire embedding space. To obtain a distribution over the vocabulary, we have to transform this continuous distribution into a discrete one. Additionally, if word embeddings are not fixed, we would have to add negative samples to prevent clustering them together. 
+
+One drawback of this approach is that this model would not be explicitly trained to minimize perplexity, contrary to the case of language models trained with \emph{CrossEntropy}. In this thesis, the focus is on models that explicitly minimize perplexity.
+
+\section{Continuous Normalizing Flows}
+
+\section{Context Conditioned CNFs}
+
+\section{Softmax Approximations}
+
+\section{Character based Context Conditioned CNFs}
+
+\section{Difficulties in training Context Conditioned CNFs}
