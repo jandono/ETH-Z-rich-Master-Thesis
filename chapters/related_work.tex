@@ -3,9 +3,114 @@
 
 \section{AWD-LSTM}
 \label{section:related_work:awd_lstm}
+\citet{merity2017regularizing} had several crucial contributions to RNN-based language modelling with their AWD-LSTM model.
+
+First, regularizing RNNs is a complicated matter. A na\"ive application of dropout \citep{srivastava2014dropout}, where we randomly dropout units in every time step, results in unit starvation and disrupts the RNN's ability to retain long term dependencies. \citet{gal2016theoretically} suggest using the same dropout mask in every time step, to prevent this from happening. On the other hand, \citet{merity2017regularizing} propose the weight-dropped LSTM, which uses Dropconnect \citep{wan2013regularization} on the hidden-to-hidden weights as a recurrent regularization.
+
+Secondly, they propose the use of Non-monotonically Triggered Averaged Stochastic Gradient Descent (NT-ASGD) as an optimization algorithm, instead of the regular Stochastic Gradient Descent (SGD).
+
+The training of neural networks can be defined as
+
+\begin{displaymath}
+    \hat{\theta} = \underset{\theta}{argmin} \ \frac{1}{N} \sum^N_{i=1} f_i(\theta),
+\end{displaymath}
+
+where $ f_i $ is the loss function for the $ i $-th data point and $ \theta $ are the parameters to be learned. SGD takes the form of
+
+\begin{displaymath}
+    \theta_{k+1} = \theta_k + \gamma_k \hat{\nabla} f(\theta_k),
+\end{displaymath}
+
+where $ k $ stands for the iteration number, $ \gamma_k $ is the learning rate and $ \hat{\nabla} $ denotes a stochastic gradient on a minibatch of samples. After convergence, SGD returns the final iteration as the solution. Contrary to this, Averaged SGD (ASGD) returns the average
+
+\begin{displaymath}
+    \frac{1}{K-T+1} \sum_{i=T}^K \theta_i
+\end{displaymath}
+
+as a solution. Here $ K $ is the total number of iterations and $ T < K $ is a user-specified averaging trigger. \citet{merity2017regularizing} propose to use an automatic trigger mechanism for the averaging. Instead of manually specifying a value for $ T $, they propose a non-monotonic criterion that triggers the averaging when the validation metric does not improve for several epochs. The full method is shown in algorithm \ref{algorithm:related_work:ASGD}.
+
+\begin{algorithm}[H]
+\SetAlgoLined
+\SetKwInOut{Input}{Inputs}
+\Input{Initial parameters $ \theta_0 $, learning rate $ \gamma $, logging interval $ L $, non-monotone interval $ n $}
+ Initialize $k \leftarrow 0, \ t \leftarrow 0, \ T \leftarrow 0, \ logs \leftarrow [] $ \\
+ \While{stopping criterion not met}{
+  Compute stochastic gradient $ \hat{\nabla}f(\theta_k) $ and take the SGD step \\
+  \If{mod(k, L) = 0 and T = 0}{
+   Compute validation perplexity $ v $ \\
+   \If{t $ > $ n and v $ > $ \ $ \underset{l \ \in \ {t-n, \ ... , \ t}}{min} \ logs[l] $ }{
+    Set $ T \leftarrow K $
+   }
+   Append $ v $ to $ logs $ \\
+   $ t \leftarrow t + 1 $
+   }
+ }
+ \Return $ \frac{1}{k - T + 1} \sum_{i=T}^k \theta_i $
+ \caption{Non-monotonically Triggered ASGD (NT-ASGD) \citep{merity2017regularizing}\label{algorithm:related_work:ASGD}}
+\end{algorithm}
+
+Finally, their codebase \footnote{https://github.com/salesforce/awd-lstm-lm} set a new foundation for RNN-based language modelling. Every other notable model that came out in the next few years used their codebase as a basis to build upon.
 
 \section{Mixture of Softmaxes}
 \label{section:related_work:mos}
 
+\citet{yang2017breaking} contributions in their paper \emph{Breaking the Softmax Bottleneck} are two-fold. First, they identify the Softmax Bottleneck problem described in section \ref{section:limitations:softmax_bottleneck} and secondly, they propose a simple technique that allows to bypass this limitation.
+
+They use the AWD-LSTM model to encode the context in a vector $ g_c $. Then, they project $ g_c $ to obtain multiple hidden states
+
+\begin{displaymath}
+    h_{c, k} = tanh(W_{h,k} g_c)
+\end{displaymath}
+
+where $ h_{c, k} $ stands for the $ k $-th component for context $ c $ and $ W_k $ are trainable parameters. Then, the conditional probability of a word given a context is modelled as
+
+\begin{align*}
+    P_\theta(w | c) = &\sum_{k=1}^K \pi_{c, k} \frac{\exp{h^T_{c, k} e_w}}{\sum_{w'} \exp{h^T_{c, k} e_{w'}}} \\
+    s.t. &\sum_{k=1}^K \pi_{c, k} = 1,
+\end{align*}
+
+where $ e_w $ is the (output) word embedding for word $ w $. The prior weights $ \pi_{c, k} $ are obtained by
+
+\begin{displaymath}
+    \pi_{c, k} = \frac{\exp{w_{\pi, k}^T g_c}}{\sum_{k'=1}^K \exp{w_{\pi, k'}^T g_c}}.
+\end{displaymath}
+
+According the previous equations, we can deduce that \citet{yang2017breaking} propose to have a weighted average between several Softmax functions. Therefore, they call this model \emph{Mixture of Softmaxes (MoS}. Furthermore, if we create a matrix $ \hat{A}_{MoS} $ similar to the one in section \ref{section:limitations:softmax_bottleneck}, we get
+
+\begin{displaymath}
+    \hat{A}_{MoS} = \log \sum_{k=1}^K \Pi_k \exp (H_{k}E).
+\end{displaymath}
+
+As $ \hat{A}_{MoS} $ is now obtained via a non-linear transformation, we can deduce that its rank is not bounded and $ \hat{A}_{MoS} $ can potentially be a full-rank matrix.
+
 \section{Direct Output Connections}
 \label{section:related_work:doc}
+
+\citet{takase2018direct} propose their \emph{Direct Output Connections (DOC)} model as a generalization of MoS. DOC computes $ J $ probability distributions from all layers and performs a weighted average between them. The output probabilities in DOC, are computed as
+
+\begin{align*}
+    P_\theta(w | c) = &\sum_{j=1}^J \pi_{j, c} \ Softmax(\Tilde{W}k_{j,c}) \\
+    s.t. &\sum_{j=1}^J \pi_{j, c} = 1
+\end{align*}
+
+where $ \pi_{j, c} $ is the weight for the $ j $-th component in the mixture given context $ c $ and is obtained by
+
+\begin{displaymath}
+    \pi_{c} = Softmax(W_\pi h^N_c),
+\end{displaymath}
+
+where $ \pi_{c} $ is a vector with elements $ \pi_{j, c} $, $ W_\pi $ is a weight matrix and $ h^N $ is the hidden state from the final layer. Furthermore, $ \Tilde{W} \in R^{|V| \times d} $ is a weight matrix and $ k_{j,c} \in R^d $ is a vector computed from the hidden state of some layer $ n $ as
+
+\begin{displaymath}
+    k_{j, c} = W_j h^n_c.
+\end{displaymath}
+
+In this equation $ W_j \in R^{d \times d_{h^n}} $ is a weight matrix. Additionally, let $ i_n $ be the number of $ k $-s computed from the hidden state of the $ n $-th layer s.t. $ \sum_{n=0}^N i_n = J $. From here we can deduce that for $ i_N = J $, i.e. if all distributions are obtained from the final layer, DOC is equivalent to MoS, which is exactly why DOC is considered to be a generalization of MoS.
+
+Finally, if we construct the matrix containing all log-probabilities given all contexts for DOC, we can notice that it takes the form of
+
+\begin{displaymath}
+    \hat{A} = \log \sum_{j=1}^J \Pi \ Softmax(K_j \Tilde{W}^T)
+\end{displaymath}
+
+where $ \Pi $ is a diagonal matrix whose entries are the weights $ \pi_{j, c} $ and $ K_j $ is a matrix whose rows are vectors $ k_{j,c} $. As $ \hat{A} $ is obtained using a non-linear transformation, $ \hat{A} $ can be of an arbitrary high rank is not limited by the Softmax Bottleneck explained in section \ref{section:limitations:softmax_bottleneck}.

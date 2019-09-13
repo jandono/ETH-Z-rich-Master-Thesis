@@ -4,28 +4,30 @@
 \section{Introduction}
 \label{section:cnf_lm:introduction}
 
-It was previously shown how Normalizing Flows are a powerful technique to distort simple distributions into complex ones. Until recently this was only usable on small toy datasets, however, due to the advances in \citet{chen2018neural} and \citet{grathwohl2018ffjord} and moving to the continuous domain, it seems like a viable technique for solving more complex problems.
+It was previously shown how Normalizing Flows are a powerful technique to distort simple distributions into complex ones. Until recently, this was only feasible on small toy datasets, however, due to the advances in \citet{chen2018neural} and \citet{grathwohl2018ffjord} and moving to the continuous domain, it has become a viable technique for solving more complex problems.
 
-In this chapter I show several different ways of incorporating Continuous Normalizing Flows in language modelling and I discuss both their theoretical and practical implications.
+In this chapter I go through several different ways of incorporating Continuous Normalizing Flows in language modelling and I discuss both their theoretical and practical implications.
 
-\section{Regression over word embeddings}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Regression Over Word Embeddings}
 \label{section:cnf_lm:regression}
 
-One possible approach is to take the final hidden state $ h $ from an RNN and use it to parameterize a simple distribution, for example a Multivariate Gaussian, to obtain $ z_0 \sim \mathcal{N} (h, \ I) $. We can then use CNFs to perform transformations on both $ z_0 $ and its log density at the same time. The goal is to transform $ z_0 $ into the embedding of the word we are trying to predict.
+One possible approach is to take the final hidden state $ h $ from an RNN, and use it to parameterize a simple initial distribution $ P_h^0 $, and sample $ z_0 $ from it. Then, we can use CNFs to perform transformations on both $ z_0 $ and its log density in parallel. The goal is to transform $ z_0 $ into the embedding of the word we are trying to predict.
 
-Let $ V $ be the vocabulary, $ h $ be the final hidden state, $ d $ be both the hidden state and the embedding dimensionality and $ e_w^* \in R^{d} $ be the word embedding of the ground truth word. Furthermore, let $ \mathcal{N}( \ . \ ; \ h, \ I) $ be the probability density function of a Multivariate Gaussian with mean $ h $ and covariance identity matrix and $ f $ be a neural network architecture parametrizing the gradient as described in chapters \ref{chapter:ode} and \ref{chapter:cnf}. Then:
+Let $ V $ be the vocabulary, $ h $ be the final hidden state, $ d $ be both the hidden state and the embedding dimensionality and $ e_w^* \in R^{d} $ be the word embedding of the ground truth word. Let $ P_h^0( \ . \ ) $ be the probability density function of the initial distribution parameterized by the hidden state and $ f $ be a neural network architecture parameterizing the gradient as described in chapters \ref{chapter:ode} and \ref{chapter:cnf}. Then:
 
 \begin{align}
     \label{equation:cnf_lm:regression:regression_word_embedding}
     \begin{split}
-        z_{t_0} &\sim \mathcal N(h, I) \\
-        \log p(z_{t_0}) &= \log \mathcal N(z_{t_0}; h, I) \\
-        z_{t_1}, \Delta \log p (z_t) &= cnf(z_{t_0}, \vec{0}, f) \\
+        z_{t_0} &\sim P_0 \\
+        \log p(z_{t_0}) &= \log P(z_{t_0}; h) \\
+        z_{t_1}, \Delta \log p (z_t) &= cnf(z_{t_0}, \ \vec{0}, \ t_0 , \ t_1 , \ f) \\
         \log p (z_{t_1}) &= \log p(z_{t_0}) -  \Delta \log  p (z_t)
     \end{split}
 \end{align}
 
-We can then treat the problem as a regression problem over word embeddings, i.e. we try to obtain a $ z_{t_1} $ as close as possible to $ e_w^* $. We can achieve that by assuming some distribution on the error and then train by minimizing the negative log likelihood. One possible choice for such a distribution is the Von Mises-Fisher as proposed by \citet{kumar2018mises}.
+We can then treat the problem as a regression problem over word embeddings, i.e. we try to obtain a $ z_{t_1} $ as close as possible to $ e_w^* $ based on some distance metric. We can achieve that by assuming some distribution on the error and then train by minimizing the negative log-likelihood. One possible choice for such a distribution is the Von Mises-Fisher as proposed by \citet{kumar2018mises}.
 
 Let $ e_w^* $ be the ground truth embedding and $ e_w $ be the predicted embedding. The density of the predicted embedding given the ground truth embedding is given by
 
@@ -45,7 +47,7 @@ $ I_v $ is a Bessel function of the first kind of order $ v $ and $ m $ is the d
     NLLvMF(e_w; e_w^*) = - \log C_m(|| e_w ||) - e_w^T e_w^*.
 \end{displaymath}
 
-Consequently, by taking \ref{equation:cnf_lm:regression:regression_word_embedding} into account the loss becomes
+Consequently, by taking equation \ref{equation:cnf_lm:regression:regression_word_embedding} into account the loss becomes
 
 \begin{displaymath}
     loss =  NLLvMF(z_1; \ e_w^*).
@@ -53,14 +55,315 @@ Consequently, by taking \ref{equation:cnf_lm:regression:regression_word_embeddin
 
 Even though we do not explicitly use $ \log p(z_{t_1}) $ for training, at the end of this process we end up with a continuous probability distribution over the entire embedding space. To obtain a distribution over the vocabulary, we have to transform this continuous distribution into a discrete one. Additionally, if word embeddings are not fixed, we would have to add negative samples to prevent clustering them together. 
 
-One drawback of this approach is that this model would not be explicitly trained to minimize perplexity, contrary to the case of language models trained with \emph{CrossEntropy}. In this thesis, the focus is on models that explicitly minimize perplexity.
+One drawback of this approach is that this model is not explicitly trained to minimize perplexity. In this thesis, the focus is on models that explicitly minimize perplexity, which is why this type of models was not analyzed further.
 
-\section{Continuous Normalizing Flows}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{CNF Language Models}
+\label{section:cnf_lm:cnfs_ce}
+
+\subsection{Training LMs with Cross-Entropy}
+
+The de facto metric for evaluating language models is perplexity, which is why the majority of them are trained using Cross-Entropy. Recall that the Cross-Entropy between two distributions $ p $ and $ q $ is defined as
+
+\begin{displaymath}
+    CE(p, \ q) = - \sum_x p(x) \log_b q(x)
+\end{displaymath}
+
+and can be interpreted as the average amount of bits needed to encode the outcome of the distribution $ p $ based on a scheme optimized for distribution $ q $. Perplexity on the other hand is defined as
+
+\begin{displaymath}
+    PPL(p, \ q) = b^{CE(p, \ q)} = b^{- \sum_x p(x) \log_b q(x)},
+\end{displaymath}
+
+where typical choices for the base $ b $ are $ 2 $ or $ e $, simply because logarithms with these bases are easy to compute. It makes no difference which one we go for as long we are consistent across both formulas. In language modeling we usually take $ p $ to be the true distribution and $ q $ to be model distribution obtained from a Softmax layer. As $ p(x) $ is a one-hot encoded ground truth vector, this boils down to
+
+\begin{equation}
+    \label{equation:cnf_lm:cnfs_ce:ce_nll}
+    CE(p, \ q) = - \log q(x^*),
+\end{equation}
+    
+where $ x^* $ is the ground truth word. From equation \ref{equation:cnf_lm:cnfs_ce:ce_nll} we can deduce that in language modeling, minimizing Cross-Entropy is equivalent to minimizing the negative log-likelihood of $ q $. Additionally, as $ p $ and $ q $ are distributions over words, we are interested in the averaged per-word perplexity. This is a measure of how good our model is, because a per-word perplexity value of $ k $, means that our model's predictive power is just as good as guessing the next word randomly between $ k $ words. Therefore perplexity is considered to be the best metric for evaluating LMs.
+
+\subsection{CNFs for Language Modelling}
+
+Chapter \ref{chapter:limitations} introduced two limitations on standard language models. Let us first introduce how can one apply CNFs to language modeling and what limitations and benefits we get from using them.
+
+Let $ V $ be the vocabulary, $ h \in R^d $ be the final hidden state, $ \log P_h^0(\ . \ ) $ be the initial log-densities commonly obtained from a linear layer with weights $ E \in R^{|V| \times d} $ and additional biases. Finally, let $ f $ be a neural network parameterizing the gradient. Then, the forward pass for one training sample would look like:
+
+\begin{align}
+    \label{equation:cnf_lm:cnf_lm_1}
+    z_{t_0} &= E , \ z_{t_0} \in R^{|V| \times d} \\
+    \label{equation:cnf_lm:cnf_lm_2}
+    \log pz_{t_0} &= \log P_h^0(z_{t_0}), \ \log pz_{t_0} \in R^{|V|} \\
+    \label{equation:cnf_lm:cnf_lm_3}
+    z_{t_1}, \Delta \log pz_t &= cnf(z_{t_0}, \ \vec{0}, \ t_0 , \ t_1 , \ f) \\
+    \label{equation:cnf_lm:cnf_lm_4}
+    \log pz_{t_1} &= \log pz_{t_0} -  \Delta \log  pz_t
+\end{align}
+
+Let us first clarify what \ref{equation:cnf_lm:cnf_lm_1} and \ref{equation:cnf_lm:cnf_lm_2} mean. $ E $ are the weights of the final linear layer used to obtain the logits in standard LMs. A linear layer performs a matrix-vector product between the hidden state $ h $ and the weights $ E $ and adds biases to obtain a resulting vector of size equal to the vocabulary. The components of this vector will correspond to a shifted dot product between $ h $ and the corresponding row in $ E $. The rows of $ E $ are commonly known as \emph{output word embeddings}, contrary to the \emph{input word embeddings} of the initial embedding layer. Additionally, if the weights between the input and the output layers are tied \citep{inan2016tying}, $ E $ is also the embedding matrix. This means that given a hidden state, we obtain a distribution over the word embedding space, with the logits being the corresponding log-densities for each word. Therefore, we can treat the rows of $ E $ as the discrete set of values from this distribution, with log-densities equal to the logits.
+
+Once we have an initial distribution, in equation \ref{equation:cnf_lm:cnf_lm_3} we obtain the change in log-density using CNFs with initial values $ z_{t_0} \in R^{|V| \times d}$ and $ \vec{0} \in R^{|V|} $. Furthermore, $ f $ is an arbitrary neural network and one possible way to define it is
+
+\begin{displaymath}
+    \frac{\partial z(t)}{\partial t} = f(z(t), \ t) = W_2 \ ReLU(W_1 \ [z(t), \ t]^T)
+\end{displaymath}
+
+where $ W_1 \in R^{d \ \times \ d+1} $ and $ W_2 \in R^{d \times d} $.
+
+Finally, in equation \ref{equation:cnf_lm:cnf_lm_4} we obtain the final log-densities by subtracting the change in log-density from the initial distribution. At the end, we obtain log-densities of a distribution over the embedding space. To transform them to discrete probabilities, we can simply take the softmax:
+
+\begin{displaymath}
+    q = Softmax(\log pz_{t_1})    
+\end{displaymath}
+
+Finally, we train with Cross-Entropy between the obtained model distribution $ q $ and the true distribution $ p $ represented by a one hot encoded ground truth vector:
+
+\begin{displaymath}
+    loss = CrossEntropy(p, q)    
+\end{displaymath}
+
+As the CNF does not depend on the hidden state, regardless of how many samples we have in a single batch, we only need to perform one flow to obtain the change in log-density. This drastically reduces both the time and memory complexity, however it does mean that we end up with a transformation that is still limited by the \emph{Softmax Bottleneck} problem. When the CNF does not depend on the hidden state it means that the change in log-density for every word is independent of the context. In return, this means that if we represent our model with a matrix similarly to the one in section \ref{section:limitations:softmax_bottleneck} what we are going to get is
+
+\begin{displaymath}
+    \begin{matrix}
+        \begin{bmatrix}
+            \log P_0(w_1 | c_1) - \Delta \log P(w_1) & \hdots & \log P_0(w_M | c_1) - \Delta \log P(w_M)  \\
+            \vdots & \ddots & \vdots \\
+            \log P_0(w_1 | c_N) - \Delta \log P(w_1) & \hdots & \log P_0(w_M | c_N) - \Delta \log P(w_M)
+        \end{bmatrix}
+    \end{matrix}
+\end{displaymath}
+
+where $ P_0(w_i | c_j) $ is the initial distribution for the $ i $-th word given the $ j $-th context and corresponds to $ \log pz_{t_0} $ in equation \ref{equation:cnf_lm:cnf_lm_4}. Additionally, $ \Delta \log P(w_i) $ is the change in log-density and corresponds to $ \Delta \log pz_t $ in equation \ref{equation:cnf_lm:cnf_lm_4}. We can then split this matrix into two separate matrices $ A $ 
+
+\begin{displaymath}
+    \begin{matrix}
+    A = \begin{bmatrix}
+       \log P_0(w_1 | c_1) & \hdots & \log P_0(w_M | c_1) \\
+       \vdots & \ddots & \vdots \\
+       \log P_0(w_1 | c_N) & \hdots & \log P_0(w_M | c_N)
+      \end{bmatrix}
+    \end{matrix}
+\end{displaymath}
+
+and $ B $
+
+\begin{displaymath}
+    \begin{matrix}
+    B = \begin{bmatrix}
+       \Delta \log P(w_1) & \hdots & \Delta \log P(w_M) \\
+       \vdots & \ddots & \vdots \\
+       \Delta \log P(w_1) & \hdots & \Delta \log P(w_M)
+      \end{bmatrix}
+    \end{matrix}.
+\end{displaymath}
+
+Now the original matrix can be written as
+
+\begin{displaymath}
+    A - B.
+\end{displaymath}
+
+We know that the rank of the sum of two matrices is bounded by
+
+\begin{displaymath}
+    rank(A + B) <= rank(A) + rank(B).
+\end{displaymath}
+
+As it was previously shown that $ A $ is a low rank matrix and $ rank(B) = 1 $, we can conclude that this approach indeed does not solve the \emph{Softmax Bottleneck} problem. Additionally, this model is also restricted by the \emph{Single Transformation} problem described in section \ref{section:limitations:single_transformation}. In the next section, it is discussed how certain changes can release the model from both limitations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Context Conditioned CNFs}
+\label{section:cnf_lm:context_cnfs}
+
+Chapter \ref{chapter:limitations} discusses the current limitations on language modeling. Moreover, in the previous section a novel approach that uses CNFs was introduced that still is still bounded by these limitations. In this section we go through a possible way to upgrade the previously described method in a way that it is not bounded by both the \emph{Softmax Bottleneck} and the \emph{Single Transformation} problems. Namely, the later denotes that we would like to adjust the nature of the distribution based on the context. We can do this by making $ f $ depend on $ h $, i.e. $ f $ becomes
+
+\begin{displaymath}
+    f(z(t), \ t, \ h)
+\end{displaymath}
+
+and one way to define it is
+
+\begin{equation}
+    \label{equation:cnf:context_cnfs:f}
+    f(z(t), \ t, \ h) = W_2 \ ReLU(W_1 \ [z(t), \ t]^T + W_h h),
+\end{equation}
+
+where $ W_1, W_h \in R^{d \ \times \ d+1} $ and $ W_2 \in R^{d \times d} $.
+
+Let $ V $ be the vocabulary, $ h \in R^d $ be the final hidden state, $ \log P_h^0(\ . \ ) $ be the initial log-densities commonly obtained from a linear layer with weights $ E \in R^{|V| \times d} $ (if the weights are tied \citep{inan2016tying} this is also the embedding matrix) and additional biases. Finally, let $ f $ be a neural network parameterizing the gradient as defined in equation \ref{equation:cnf:context_cnfs:f}. Then, the batched version of the forward pass for one training sample looks like
+
+\begin{align}
+    \label{equation:cnf_lm:cnfh_lm_1}
+    z_{t_0} &= E , \ z_{t_0} \in R^{|V| \times d} \\
+    \label{equation:cnf_lm:cnfh_lm_2}
+    \log pz_{t_0} &= \log P_h^0(z_{t_0}), \ \log pz_{t_0} \in R^{|V|} \\
+    \label{equation:cnf_lm:cnfh_lm_3}
+    z_{t_1}, \Delta \log pz_t &= cnf(z_{t_0}, \ \vec{0}, \ h, \ t_0 , \ t_1 , \ f) \\
+    \label{equation:cnf_lm:cnfh_lm_4}
+    \log pz_{t_1} &= \log pz_{t_0} -  \Delta \log  pz_t
+\end{align}
+
+Even though the approach is same as in section \ref{section:cnf_lm:cnfs_ce}, here the CNF depends on $ h $. We can then proceed and obtain the model distribution $ q $ with
+
+\begin{displaymath}
+    q = Softmax(log pz_{t_1})
+\end{displaymath}
+
+Finally, we can train the model with Cross-Entropy
+
+\begin{displaymath}
+    loss = Cross-Entropy(p, q)
+\end{displaymath}
+
+where $ p $ is the true distribution and is represented by a one \textcolor{red}{-} hot encoded ground truth vector.
+
+To see whether this model still suffers from the \emph{Softmax Bottleneck} problem, we can do the same test as in the previous section. Let us first create a matrix for our model in the same manner
+
+\begin{displaymath}
+    \begin{matrix}
+    \begin{bmatrix}
+       \log P_0(w_1 | c_1) - \Delta \log P(w_1, c_1) & \hdots & \log P_0(w_M | c_1) - \Delta \log P(w_M | c_1)  \\
+       \vdots & \ddots & \vdots \\
+       \log P_0(w_1 | c_N) - \Delta \log P(w_1, c_2) & \hdots & \log P_0(w_M | c_N) - \Delta \log P(w_M | c_N)
+      \end{bmatrix}
+    \end{matrix}
+\end{displaymath}
+
+where $ P_0(w_i | c_j) $ is the same initial distribution as in the previous case and corresponds to $ \log pz_{t_0} $ in equation \ref{equation:cnf_lm:cnfh_lm_4}. Additionally, $ \Delta \log P(w_i | c_j) $ is the change in log-density and corresponds to $ \Delta \log pz_t $ in equation \ref{equation:cnf_lm:cnfh_lm_4}. Notice that in this case, the change in log-density depends on the context. Then, we can split this into two matrices, $ A $
+
+\begin{displaymath}
+    \begin{matrix}
+    A = \begin{bmatrix}
+       \log P_0(w_1 | c_1) & \hdots & \log P_0(w_M | c_1) \\
+       \vdots & \ddots & \vdots \\
+       \log P_0(w_1 | c_N) & \hdots & \log P_0(w_M | c_N)
+      \end{bmatrix}
+    \end{matrix}
+\end{displaymath}
+
+and $ B $
+
+\begin{displaymath}
+    \begin{matrix}
+    B = \begin{bmatrix}
+       \Delta \log P(w_1 | c_1) & \hdots & \Delta \log P(w_M | c_1) \\
+       \vdots & \ddots & \vdots \\
+       \Delta \log P(w_1 | c_N) & \hdots & \Delta \log P(w_M | c_N)
+      \end{bmatrix}
+    \end{matrix}.
+\end{displaymath}
+
+The rank of the original matrix is still bounded by the same rule, i.e.
+
+\begin{displaymath}
+    rank(A + B) <= rank(A) + rank(B)
+\end{displaymath}
+
+however, the rank of matrix $ B $ can now go up to $ N $ or $ M $, i.e. $ rank(B) <= min(N, \ M) $. Therefore, the rank of $ A + B $ is not constrained by the rank of $ A $ and the sum can potentially be a full-rank matrix. This proves that the model is indeed not limited by the \emph{Softmax Bottleneck}. Additionally, this model starts with a simple initial distribution and distorts it into an arbitrary complex one based on the context. This means that the model is not limited by the \emph{Single Transformation} problem by construction, as we adapt the nature of the distribution based on the context. Therefore, the entire model is more powerful and unrestricted. However, this slight change has certain implications on the computational efficiency of the entire method.
+
+\section{Issues with Context Conditioned CNFs}
+\label{section:cnf_lm:issues_cc_cnfs}
+
+Having context conditioned CNFs drastically increases both the time and the memory complexity. Contrary to the previous case where regardless of how many samples in a batch we have solving one CNF was enough, now we need to solve a separate CNF for every distribution. During training, samples are typically represented as tensors of shape
+
+\begin{displaymath}
+    [batch\_size, \ sequence\_size, \ embedding\_size],
+\end{displaymath}
+
+where $ sequence\_size $ stands for the amount of words in a single sample and $ batch\_size $ stands for the amount of samples in a single batch. As for every sample we need to obtain $ sequence\_size $ distributions, after we process the input with an LM we get a tensor of shape
+
+\begin{displaymath}
+    [batch\_size, \ sequence\_size, \ vocabulary\_size],
+\end{displaymath}
+
+which contains $ batch\_size \times sequence\_size $ distributions over the vocabulary. This tensor in fact represents the initial distributions for the entire batch. For every distribution we now need to solve a CNF and distort it. If we batch the entire process and solve one large CNF, the tensor $ z_{t_0} $ from equation \ref{equation:cnf_lm:cnfh_lm_1} has shape
+
+\begin{displaymath}
+    [batch\_size, \ sequence\_size, \ vocabulary\_size, \ embedding\_size].
+\end{displaymath}
+
+The size of the vocabulary in word-based LMs typically starts around $ 10^4 $ and can go up to $ 10^6 $ in datasets like the \emph{The One Billion Word Benchmark} \citep{chelba2013one}. The dimensionality of the embeddings is typically in the low hundreds and reducing it past a certain point results in a loss of performance. Moreover, reducing $ batch\_size $ and $ sequence\_size $ generally only results in a memory versus speed trade-off. This means that evaluating the normalization constant is the real bottleneck for this model.
+
+Possible way to avoid this vocabulary bottleneck is to use character-based LMs. Character based LMs model distributions over sequences of characters, i.e.
+
+\begin{displaymath}
+    P(c_1, ..., c_n) = \prod_i^n P(c_i | c_{1..i-1}),
+\end{displaymath}
+
+where $ c_i $ is the $ i $-th character in the sequence. Regardless of how many words there are in the training corpus, the vocabulary of character-based LMs is in most cases less than 100. Therefore, the vocabulary is never an issue for character based LMs. However modeling distributions over characters is more complicated than modeling a distribution over words. This follows from the fact that a character can exist in more contexts compared to a word, so modelling all of them is more complicated than in the case of word-based LMs.
+
+However, if we really want to use word based LMs we would have to either resort to techniques like Hierarchical Softmax \citep{morin2005hierarchical} or approximate the normalization constant using sampling techniques. Hierarchical Softmax comes with additional problems, such as choosing the ordering of the words, which is why in this thesis the focus is on approximating the Softmax via sampling.
 
 \section{Softmax Approximations}
+\label{section:cnf_lm:softmax_approximations}
+\subsection{Introduction to Softmax Approximation}
 
-\section{Character based Context Conditioned CNFs}
+As shown in the previous section, evaluating the normalization constant for distributions over large vocabularies is not always possible. However, training large vocabulary LMs is still an active research area. \emph{The One Billion Word Benchmark} \citep{chelba2013one} is a large vocabulary benchmark dataset where researchers push the limits and effectively train large vocabulary LMs. In this section we go through approaches that estimate the constant with only a few words.
 
-\section{Difficulties in training Context Conditioned CNFs}
+\subsection{Sampling Based Approaches}
+
+Equation \ref{equation:cnf_lm:cnfs_ce:ce_nll} shows depicts a connection between Cross-Entropy and Negative Log-Likelihood. The Negative Log-Likelihood for a single word and context pair in language modelling can be written as
+
+\begin{displaymath}
+    L_{w, c} = - \log \frac{exp(l_{w,c})}{\sum_{w_i \in V} exp(l_{w_i,c})},
+\end{displaymath}
+
+where $ l_{w,c} $ represents the logit for word $ w $ given context $ c $. If we expand we get
+
+\begin{displaymath}
+    L_{w, c} = - l_{w, c} + \log \sum_{w_i \in V} exp(l_{w_i,c}).
+\end{displaymath}
+
+Then, if we take the gradient with respect to the model's parameters $ \theta $ we obtain
+
+\begin{align}
+    \nabla_\theta L_{w, c} &= - \nabla_\theta l_{w, c} + \nabla_\theta \log \sum_{w_i \in V} exp(l_{w_i,c}) \\
+                           &= - \nabla_\theta l_{w, c} + \frac{1}{\sum_{w_i \in V} exp(l_{w_i,c})} \sum_{w_i \in V} \nabla_\theta exp(l_{w_i,c}) \\
+                           &= - \nabla_\theta l_{w, c} + \frac{1}{\sum_{w_i \in V} exp(l_{w_i,c})} \sum_{w_i \in V} exp(l_{w_i,c}) \nabla_\theta l_{w_i, c} \\
+                           &= - \nabla_\theta l_{w, c} + \sum_{w_i \in V} \frac{exp(l_{w_i,c})}{\sum_{w_j \in V} exp(l_{w_j,c})} \nabla_\theta l_{w_i, c}
+\end{align}
+
+The fraction inside the sum is the model's probability of $ w_i $ given context $ c $
+
+\begin{displaymath}
+    P_\theta(w_i | c) = \frac{exp(l_{w_i,c})}{\sum_{w_j \in V} exp(l_{w_j,c})},
+\end{displaymath}
+
+so the gradient can be written as
+
+\begin{align}
+    \label{equation:cnf_lm:sftmx_aproximations:expectation_1}
+    \nabla_\theta L_{w, c} &= - \nabla_\theta l_{w, c} + \sum_{w_i \in V}  P_\theta(w_i | c) \nabla_\theta l_{w_i, c} \\
+                           \label{equation:cnf_lm:sftmx_aproximations:expectation_2}
+                           &= - \nabla_\theta l_{w, c} + \mathbb{E}_{w_i \sim P_\theta} [ \nabla_\theta l_{w_i, c} ]
+\end{align}
+
+Sampling based approaches estimate the expectation in equation \ref{equation:cnf_lm:sftmx_aproximations:expectation_2}.
+
+\subsection{Importance Sampling}
+We can approximate the expected value $ \mathbb{E} $ of any probability distribution using Monte-Carlo methods. In our case, we can approximate the expected value in equation \ref{equation:cnf_lm:sftmx_aproximations:expectation_2} with
+
+\begin{displaymath}
+    \mathbb{E}_{w_i \sim P_\theta} \nabla_\theta l_{w_i, c} \approx \frac{1}{m} \sum_{i=1}^m \nabla_\theta l_{w_i, c},
+\end{displaymath}
+
+where we obtain $ m $ samples from $ P_\theta( w | c ) $ and average the gradients. Unfortunately, $ P_\theta(w | c) $ is what we are trying to learn so we have to use a propositional, or also called a noise, distribution $ Q(w) $ from which it is cheap to sample as a substitute. Furthermore, it is important that $Q$ is similar to $P$, which is why it is taken to be the unigram distribution of the training set in the case of langauge modelling. The goal of \emph{Importance Sampling} is exactly that, to approximate a target distribution $ P $ using a propositional distribution $ Q $ and Monte-Carlo methods. Namely, instead of weighting the gradient in equation \ref{equation:cnf_lm:sftmx_aproximations:expectation_1} with the expensive to compute $ P_\theta( w | c ) $, we weight it with a factor that depends on $ Q(w) $.
+
+A standard practice is to obtain $ k $ noise samples from $ Q $ and estimate the aforementioned quantity with them. Noise Contrastive Estimation (NCE) \citep{gutmann2010noise} proposes using a surrogate loss and it models the problem as a binary classification task, where the goal is to predict whether a sample comes from the true or the noise distribution. \citet{gutmann2010noise} show that as we increase the number of samples, the derivative of the NCE loss approaches the derivative of the softmax function.
+
+\citet{jozefowicz2016exploring} however, propose a different approach based on Importance Sampling. If we take the ground truth word and $ k $ noise samples and define
+
+\begin{displaymath}
+    S = \{w_1, ..., w_{k+1} \},
+\end{displaymath}
+
+such that $ w_1 $ is always the true word and $ w_2, ... w_{k+1} $ are the noise samples we can optimize a multi-class loss over a multinomial variable $ Y $ representing the labels. Namely, we can define
+
+\begin{displaymath}
+    P(Y=k \ | \ S, \ c) = Softmax(l_{w_k, c} - \log Q(w_k))
+\end{displaymath}
+
+and train by maximizing the log-likelihood $ \log P(Y = 1 \ | \ S, \ c) $. After training, $ Softmax(l_{w, c}) $ is a good approximation of $ P_\theta(w|c) $. \citet{jozefowicz2016exploring} suggest that this probably is a better choice than NCE for language modeling, as it optimizes a mutli-class classification task instead of a binary one.

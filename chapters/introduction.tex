@@ -1,21 +1,21 @@
 \chapter{Introduction}
 \label{chapter:introduction}
 
-Anything we see or do, can be described and contained within a sequence of words, meaning that the entire complexity of the world can be embedded in a piece of text. This is exactly what makes text and textual communication so important in our daily lives. Additionally, this is also what makes text processing and textual communication so complex for machines. Namely, the area of Computer Science that deals with these problems is called Natural Language Processing (NLP). NLP \textcolor{red}{NLP staj vo abbreviations nekade} is a vast area with many subcategories, but without doubt, one of its core and most vital subcategories is text understanding and text generation.
+Anything we see or do, can be described and contained within a sequence of words, meaning that the entire complexity of the world can be embedded in a piece of text. This is exactly what makes text and textual communication so important in our daily lives. Additionally, this is also what makes text processing and textual communication so complex for machines. Namely, the area of Computer Science that deals with these problems is called Natural Language Processing (NLP). NLP \textcolor{red}{NLP staj vo abbreviations nekade} is a vast area with many subcategories, but without doubt, one of its core and most vital subcategories \osc{subfields?} is text understanding and text generation.
 
-In NLP, the tools that are used for text generation are called Language Models (LM) \textcolor{red}{stavi go LM vo abbreviations}. Let's consider the following sentence:
+In NLP, the tools that are used for text generation \osc{not only generation.. technically, they are actually used for density estimation, right? also, tools sounds weird, but since you started so generic, have no idea what to call it :D} are called Language Models (LM) \textcolor{red}{stavi go LM vo abbreviations}. Let's consider the following sentence:
 
 \begin{center}
     \emph{Look at all those clouds, it is going to ...}
 \end{center}
 
-Given the sentence above as a context, a Language Model will then try to estimate what is the most likely word to end the sentence. From a mathematical point of view, LMs try to learn a context conditioned probability distribution over a vocabulary. This means that given a vocabulary of available words and a sequence of words that represents the history or the context, a Language Model processes the context and returns a discrete probability distribution over the vocabulary. 
+Given the sentence above as a context, a Language Model will then try to estimate what is the most likely word to end the sentence. From a mathematical point of view, LMs try to learn a context conditioned probability distribution over a vocabulary. This means that given a vocabulary of available words and a sequence of words that represents the history or the context, a Language Model processes the context and returns a discrete probability distribution over the vocabulary. \osc{No .}
 
 \begin{displaymath}
-    P(w | w_{1..i-1})
+    P(w | w_{1..i-1})\osc{. Repeat everywhere below as well}
 \end{displaymath}
 
-Here $w_{1..i-1}$, is the context, often denoted as simply $ h $, and $ w $ is a discrete random variable that represents the vocabulary. We can then proceed with generating the next word by simply selecting the word with highest probability.
+Here $w_{1..i-1}$, \osc{No ,} is the context, often denoted as simply \osc{No simply} $ h $, and $ w $ is a discrete random variable that represents the vocabulary. We can then proceed with generating the next word by simply selecting the word with highest probability.
 
 \begin{displaymath}
     \hat{w} = argmax_w P(w | w_{1..i-1})

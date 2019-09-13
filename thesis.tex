@@ -6,7 +6,7 @@
 
 
 %% We use the memoir class because it offers a many easy to use features.
-\documentclass[11pt,a4paper,titlepage]{memoir}
+\documentclass[11pt,a4paper,titlepage,doubleside]{memoir}  % TODO: Change to doubleside?
 
 %% Packages
 %% ========
@@ -53,8 +53,8 @@
 %% declaration of originality.
 \usepackage{pdfpages}
 
-%% Used for putting images side by side 
-\usepackage{caption}
+%% Used for putting images side by side and for changing the style of the captions
+\usepackage[format=plain,labelfont=bf,textfont=it]{caption}
 \usepackage{subcaption}
 
 %% Used for additional citation options
@@ -67,6 +67,9 @@
 
 %% Used for large integral symbols
 \usepackage{bigints}
+
+%% Used for algorithms
+\usepackage[ruled, lined]{algorithm2e}
 
 %% Some more packages that you may want to use.  Have a look at the
 %% file, and consult the package docs for each.
@@ -91,10 +94,10 @@
 %% Document information
 %% ====================
 
-\title{Title of Thesis}
+\title{Explicit Word Density Estimation for Language Modelling}
 \author{Jovan Andonov}
 \thesistype{Master Thesis}
-\advisors{Advisors: Prof.\ Dr.\ T. Hofmann, PhD.\ P. Grnarova, PhD. G. Becignuel}
+\advisors{Advisors: Prof.\ Dr.\ T. Hofmann, PhD. O. Ganea, PhD. G. B\'{e}cigneul, PhD.\ P. Grnarova}
 \department{Department of Computer Science}
 \date{September 15, 2019}
 
@@ -127,9 +130,8 @@
 \input{chapters/neural_odes}
 \input{chapters/c_normalizing_flows}
 \input{chapters/cnfs_language_modelling}
-\input{chapters/models}
 \input{chapters/experiments}
-
+\input{chapters/conclusion_future}
 \appendix
 
 \input{appendix}

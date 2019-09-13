@@ -1,1 +1,164 @@
 \chapter{Experiments}
+
+\section{Legend}
+This section explains the abbreviations in the tables below mean.
+
+\begin{itemize}
+    \item \emph{model} - the model being used. AWD stands for AWD-LSTM \citep{merity2017regularizing}, MoS \citep{yang2017breaking} stands for Mixture of Softmaxes and DoC stands for Direct Output Connections \citep{takase2018direct}.
+    \item \emph{exp} - number of experts. Models that perform a mixture of distributions need a prespecified value for the number of components in the mixture.
+    \item \emph{h} - dimensionality of the middle hidden states of the RNN.
+    \item \emph{lasth} - dimensionality of the final hidden state of the RNN.
+    \item \emph{emb} - dimensionality of the embeddings.
+    \item \emph{lr} - learning rate.
+    \item \emph{ep} - epoch at which the presented results are obtained.
+    \item \emph{vloss / tloss} - validation loss / test loss. Loss obtained on the validation or the test set.
+    \item \emph{vppl / tppl} - validation perplexity / test perplexity. Perplexity obtained on the validation or the test set.
+    \item \emph{vbpc / tbpc} - validation bits per character / test bits per character. Bits per character obtained on the validation or the test set.
+    \item \emph{prefinetuned} - in the case of transfer learning specifies whether the base model was finetuned before transferring the weights.
+    \item \emph{freeze} - in the case of transfer learning specifies whether the transfered weights are fixed or trainable.
+\end{itemize}
+
+\section{Dataset}
+All models are evaluated on the Penn Treebank dataset which is the standard dataset for evaluating language models. The dataset is used as preprocessed by \citet{mikolov2011empirical} and it consists of 929k training words, 73k validation words, and 82k test words. After preprocessing, all words consist of only lowercase letters and all numbers are replaced with a placeholder $ N $. Additionally, newlines are replaced with a special $ <eos> $ token. Finally, after preprocessing the dataset contains only the 10000 most frequent words and the rest are replaced with a special $ <unk> $ token.
+
+\section{Hyperparameters}
+
+\section{Word Based Models}
+
+\subsection{Baselines}
+
+Three models are used as baselines.
+\begin{enumerate}
+    \item 
+\end{enumerate}
+
+\begin{table}[]
+% \centering
+\caption{Results from baseline word-based models before finetuning.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{model}    & \textbf{exp} & \textbf{h}   & \textbf{lasth} & \textbf{emb} & \textbf{lr} & \textbf{ep}  & \textbf{vloss} & \textbf{vppl}  & \textbf{tloss} & \textbf{tppl}  \\ \hline
+AWD      & n/a & 960 & 400   & 400 & 20 & 517 & 4.11  & 60.93 & 4.07  & 58.67 \\ \hline
+MoS      & 15  & 960 & 620   & 280 & 20 & 511 & 4.06  & 57.89 & 4.02  & 55.84 \\ \hline
+DoC      & 15  & 960 & 620   & 280 & 20 & 500 & 4.02  & 55.45 & 3.98  & 53.44 \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Results from baseline word-based models after finetuning.}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{model} & \textbf{vloss} & \textbf{vppl}  & \textbf{tloss} & \textbf{tppl}  \\ \hline
+AWD   & 4.10  & 60.33 & 4.06  & 58.05 \\ \hline
+MoS   & 4.04  & 56.73 & 4.00  & 54.54 \\ \hline
+DoC   & 4.00  & 54.68 & 3.97  & 52.87 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Continuous Normalizing Flows}
+
+\begin{table}[]
+\centering
+\caption{Results from training CNFs on top of a pretrained AWD-LSTM word-based model.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl}  \\ \hline
+no                                              & no                                        & 0.1                                   & 152                                   & 4.12                                     & 61.56                                   & 4.07                                     & 58.80                          \\ \hline
+yes                                             & no                                        & 0.1                                   & 160                                   & 4.15                                     & 63.20                                   & 4.11                                     & 60.97                          \\ \hline
+no                                              & yes                                       & 0.1                                   & 80                                    & 4.11                                     & 60.65                                   & 4.07                                     & 58.53                          \\ \hline
+yes                                             & yes                                       & 0.1                                   & 44                                    & 4.10                                     & 60.51                                   & 4.06                                     & 58.21                          \\ \hline
+no                                              & no                                        & 1                                     & 73                                    & 410                                      & 60.58                                   & 4.06                                     & 57.88                          \\ \hline
+yes                                             & no                                        & 1                                     & 43                                    & 4.11                                     & 60.98                                   & 4.07                                     & 58.28                          \\ \hline
+no                                              & yes                                       & 1                                     & 27                                    & 4.11                                     & 61.06                                   & 4.07                                     & 58.75                          \\ \hline
+yes                                             & yes                                       & 1                                     &                                       &                                          &                                         &                                          &                                \\ \hline
+\end{tabular}
+\end{table}
+
+
+\begin{table}[]
+\centering
+\caption{Results from training CNFs on top of a pretrained MoS word-based model.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+no                    & no              & 0.01        &             &                &               &                &      \\ \hline
+yes                   & no              & 0.01        &             &                &               &                &      \\ \hline
+no                    & yes             & 0.01        &             &                &               &                &      \\ \hline
+yes                   & yes             & 0.01        &             &                &               &                &      \\ \hline
+no                    & no              & 0.1         & 7           & 4.09           & 59.49         &                &      \\ \hline
+yes                   & no              & 0.1         & 7           & 4.07           & 58.77         &                &      \\ \hline
+no                    & yes             & 0.1         & 62          & 4.05           & 57.56         &                &      \\ \hline
+yes                   & yes             & 0.1         & 62          & 4.03           & 56.50         &                &      \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Results from training CNFs on top of a pretrained DoC word-based model.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+no           & no     & 0.05 & 11 & 4.04  & 56.69 & 4.00  & 54.54 \\ \hline
+yes          & no     & 0.05 & 8  & 4.03  & 56.05 & 3.99  & 54.15 \\ \hline
+no           & yes    & 0.05 & 81 & 4.02  & 55.55 & 3.98  & 53.59 \\ \hline
+yes          & yes    & 0.05 & 64 & 4.00  & 54.79 & 3.97  & 53.02 \\ \hline
+no           & no     & 0.1  & 11 & 4.05  & 57.16 & 4.00  & 54.85 \\ \hline
+yes          & no     & 0.1  &    &       &       &       &       \\ \hline
+no           & yes    & 0.1  & 43 & 4.02  & 55.63 & 3.98  & 53.66 \\ \hline
+yes          & yes    & 0.1  & 46 & 4.00  & 54.86 & 3.97  & 53.14 \\ \hline
+no           & no     & 1    & 49 & 4.06  & 57.84 & 4.01  & 55.14 \\ \hline
+yes          & no     & 1    &    &       &       &       &       \\ \hline
+no           & yes    & 1    & 11 & 4.07  & 58.62 & 4.04  & 56.58 \\ \hline
+yes          & yes    & 1    & 15 & 4.06  & 58.00 & 4.03  & 56.10 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Context Conditioned CNFs}
+
+Due to the issues discussed in section \ref{section:cnf_lm:issues_cc_cnfs} all word-based Context Conditioned CNFs are trained using Importance Sampling. In every training iteration 20 labels are obtained from the unigram distribution of the training set and are concatenated to the true label. Furthermore, the RNN base of the models is initialized with the weights of a pretrained AWD-LSTM model.
+
+\begin{table}[]
+\centering
+\caption{Results from training Context Conditioned CNFs on top of a pretrained word-based AWD-LSTM model.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+no           & no     & 0.1 &    &       &      &       &      \\ \hline
+yes          & no     & 0.1 &    &       &      &       &      \\ \hline
+no           & yes    & 0.1 &    &       &      &       &      \\ \hline
+yes          & yes    & 0.1 &    &       &      &       &      \\ \hline
+no           & no     & 1   &    &       &      &       &      \\ \hline
+yes          & no     & 1   &    &       &      &       &      \\ \hline
+no           & yes    & 1   &    &       &      &       &      \\ \hline
+yes          & yes    & 1   &    &       &      &       &      \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Character Based Models}
+
+When using Context Conditioned CNFs for character models the vocabulary is limited to around 50do not suffer from the issues mentioned in section \ref{section:cnf_lm:issues_cc_cnfs} they are trained using the entire vocabulary.
+
+\begin{table}[]
+\centering
+\caption{Results from training baseline character-based models.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{model} & \textbf{h} & \textbf{lasth} & \textbf{emb} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vbpc} & \textbf{tloss} & \textbf{tbpc} \\ \hline
+awd       & 1000       & 200            & 200          & 0.002       & 364         & 0.84           & 1.211         & 0.82           & 1.183         \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Results from training Context Conditioned CNFs on top of a pretrained character-based AWD-LSTM model.}
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+\textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vbpc} & \textbf{tloss} & \textbf{tbpc} \\ \hline
+yes             & 1e-5        & 55          & 0.84           & 1.213         & 0.82           & 1.184         \\ \hline
+no              & 1e-4        & 15          & 0.84           & 1.212         & 0.82           & 1.182         \\ \hline
+yes             & 1e-4        & 28          & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
+no              & 2e-3        & 1           & 0.92           & 1.329         & 0.90           & 1.295         \\ \hline
+yes             & 2e-3        & 3           & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
+\end{tabular}
+\end{table}
