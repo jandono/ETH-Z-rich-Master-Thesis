@@ -75,7 +75,7 @@ where $ e_w $ is the (output) word embedding for word $ w $. The prior weights $
     \pi_{c, k} = \frac{\exp{w_{\pi, k}^T g_c}}{\sum_{k'=1}^K \exp{w_{\pi, k'}^T g_c}}.
 \end{displaymath}
 
-According the previous equations, we can deduce that \citet{yang2017breaking} propose to have a weighted average between several Softmax functions. Therefore, they call this model \emph{Mixture of Softmaxes (MoS}. Furthermore, if we create a matrix $ \hat{A}_{MoS} $ similar to the one in section \ref{section:limitations:softmax_bottleneck}, we get
+According the previous equations, we can deduce that \citet{yang2017breaking} propose to have a weighted average between several Softmax functions. Therefore, they call this model \emph{Mixture of Softmaxes (MoS)}. Furthermore, if we create a matrix $ \hat{A}_{MoS} $ similar to the one in section \ref{section:limitations:softmax_bottleneck}, we get
 
 \begin{displaymath}
     \hat{A}_{MoS} = \log \sum_{k=1}^K \Pi_k \exp (H_{k}E).

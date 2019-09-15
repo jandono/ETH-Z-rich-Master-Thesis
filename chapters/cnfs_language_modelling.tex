@@ -6,6 +6,8 @@
 
 It was previously shown how Normalizing Flows are a powerful technique to distort simple distributions into complex ones. Until recently, this was only feasible on small toy datasets, however, due to the advances in \citet{chen2018neural} and \citet{grathwohl2018ffjord} and moving to the continuous domain, it has become a viable technique for solving more complex problems.
 
+\osc{1st person to 3rd person}
+
 In this chapter I go through several different ways of incorporating Continuous Normalizing Flows in language modelling and I discuss both their theoretical and practical implications.
 
 
@@ -91,6 +93,8 @@ Chapter \ref{chapter:limitations} introduced two limitations on standard languag
 
 Let $ V $ be the vocabulary, $ h \in R^d $ be the final hidden state, $ \log P_h^0(\ . \ ) $ be the initial log-densities commonly obtained from a linear layer with weights $ E \in R^{|V| \times d} $ and additional biases. Finally, let $ f $ be a neural network parameterizing the gradient. Then, the forward pass for one training sample would look like:
 
+\osc{$p(z_t)$? not $pz_t$}
+
 \begin{align}
     \label{equation:cnf_lm:cnf_lm_1}
     z_{t_0} &= E , \ z_{t_0} \in R^{|V| \times d} \\
@@ -168,6 +172,8 @@ Now the original matrix can be written as
 
 We know that the rank of the sum of two matrices is bounded by
 
+\osc{$\leq$ everywhere instead of $<=$}
+
 \begin{displaymath}
     rank(A + B) <= rank(A) + rank(B).
 \end{displaymath}
@@ -215,7 +221,7 @@ Even though the approach is same as in section \ref{section:cnf_lm:cnfs_ce}, her
 Finally, we can train the model with Cross-Entropy
 
 \begin{displaymath}
-    loss = Cross-Entropy(p, q)
+    loss = CrossEntropy(p, q)
 \end{displaymath}
 
 where $ p $ is the true distribution and is represented by a one \textcolor{red}{-} hot encoded ground truth vector.
@@ -308,10 +314,12 @@ As shown in the previous section, evaluating the normalization constant for dist
 Equation \ref{equation:cnf_lm:cnfs_ce:ce_nll} shows depicts a connection between Cross-Entropy and Negative Log-Likelihood. The Negative Log-Likelihood for a single word and context pair in language modelling can be written as
 
 \begin{displaymath}
-    L_{w, c} = - \log \frac{exp(l_{w,c})}{\sum_{w_i \in V} exp(l_{w_i,c})},
+    L_{w, c} = - \log \frac{\exp(l_{w,c})}{\sum_{w_i \in V} \exp(l_{w_i,c})},
 \end{displaymath}
 
 where $ l_{w,c} $ represents the logit for word $ w $ given context $ c $. If we expand we get
+
+\osc{$\exp$ not $exp$ everywhere}
 
 \begin{displaymath}
     L_{w, c} = - l_{w, c} + \log \sum_{w_i \in V} exp(l_{w_i,c}).

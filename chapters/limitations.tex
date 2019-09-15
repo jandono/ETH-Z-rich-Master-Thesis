@@ -4,11 +4,13 @@
 \section{The Softmax Bottleneck}
 \label{section:limitations:softmax_bottleneck}
 
-The majority of parametric LMs use a Softmax function operating on the context $ c $ , and a word embedding $ e_w $ to define the conditional distribution $ P_\theta(w|c) $, where $ w $ stands for a word, and $ \theta $ are the parameters of the model. More specifically, the model distribution is usually written as:
+The majority of parametric LMs use a Softmax function operating on the context $ c $, and a word embedding $ e_w $ to define the conditional distribution $ P_\theta(w|c) $, where $ w $ stands for a word, and $ \theta $ are the parameters of the model. More specifically, the model distribution is usually written as:
 
 \begin{displaymath}
     P_\theta(w | c) = \frac{h^Te_w}{\sum_{e_{w'}} h^Te_{w'}}
 \end{displaymath}
+
+\osc{I would still put a comma in the math above, and then start with a lowercase ``where''}
 
 Where $ h $ is a function of $ c $ and it is commonly obtained using a Recurrent Neural Network, and $ e_w $ is the embedding for word $ w $. Additionally, $ h \in R^D $ and $ e_w \in R^D $ and both \emph{h} and $ e_w $ depend on $ \theta $. Finally, we refer to the dot product $ h^Te_w $ as a \emph{logit}.
 
@@ -67,6 +69,8 @@ and we want it to be as close as possible to the true $ A $. Now we can ask the 
     \emph{"What is the expressiveness of this language model?"}
 \end{center}
 
+\osc{Don't use $>=$, use $\geq$, or $\leq$, respectively. Also, $\rank$ not $rank$.}
+
 We can then proceed to answer this question from a matrix factorization point of view. Essentially, we want to learn matrices $ H_\theta $ and $ E_\theta $ such that we will be able to factorize the true distribution $ A $. However, in order for a valid factorization to exist the rank of $ H_\theta E^T_\theta $ has to be at least as large as the rank of $ A $, i.e. $ rank(H_\theta E^T_\theta ) >= rank(A) $. As $ H_\theta \in R^{N \times D} $ and $ E_\theta \in R^{M \times D} $, $ rank(H_\theta E^T_\theta ) $ is bounded by $ D $. Therefore, this is a limitation that comes from the final \emph{Softmax layer}. It simply means, that no matter how efficient we are in embedding all contexts into a matrix $ H_\theta $, we will not be able to retrieve the true language distribution $ A $, unless $ D >= rank(A) $.
 
 To realize why this is indeed a bottleneck, and a problem in language modelling, we should first consider the typical dimensionalities that are used for the hidden state and the word embeddings. Usually, $ D $ is in the low hundreds, while the rank of the true distribution $ A $ can theoretically be up to $ M $ which is usually at least as large as $ 10^4 $. Right off the bat, we have a mismatch of several orders of magnitudes. One might say that an easy fix is to simply increase $ D $ and have a $ M \times M $ \emph{Softmax} in the final layer. However, this will drastically increase the amount of trainable parameters, resulting in slower training and harder optimization. Even though, wider and larger neural networks are theoretically more expressive, in practice they are a lot more difficult to train.
@@ -119,6 +123,8 @@ It is easy to see that multiple words are likely to come after this particular c
 \caption{Neighborhood of \emph{computer} in the embedding space of AWD-LSTM.}
 \label{figure:computer}
 \end{figure}
+
+\osc{Don't use "double quotes", use \LaTeX{}-like ``double quotes''.}
 
 Now imagine every single word that can finish the previous sentence. Every one of those words is embedded into its own neighborhood where it is close to other words that share the same context on average. Therefore, a simple single mode Gaussian seems very limited for all those \emph{"fat tail"} situations in natural languages. Ideally, we would like something that can adapt based on the context, i.e. given a hidden state we can obtain different type of distributions. It is also possible that the success of MoS \citep{yang2017breaking} and DoC \citep{takase2018direct} papers, in addition to breaking the \emph{softmax bottleneck}, is due to the fact that they learn a dynamic mixture of Gaussians, which by definition is more expressive. Additionally, based on the amount of Gaussians in the mixture, those approaches are more or less capable of solving the previously mentioned issues.
 

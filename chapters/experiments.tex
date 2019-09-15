@@ -1,5 +1,6 @@
 \chapter{Experiments}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Legend}
 This section explains the abbreviations in the tables below mean.
 
@@ -18,19 +19,23 @@ This section explains the abbreviations in the tables below mean.
     \item \emph{freeze} - in the case of transfer learning specifies whether the transfered weights are fixed or trainable.
 \end{itemize}
 
-\section{Dataset}
-All models are evaluated on the Penn Treebank dataset which is the standard dataset for evaluating language models. The dataset is used as preprocessed by \citet{mikolov2011empirical} and it consists of 929k training words, 73k validation words, and 82k test words. After preprocessing, all words consist of only lowercase letters and all numbers are replaced with a placeholder $ N $. Additionally, newlines are replaced with a special $ <eos> $ token. Finally, after preprocessing the dataset contains only the 10000 most frequent words and the rest are replaced with a special $ <unk> $ token.
+\section{Datasets}
+All models are evaluated on the Penn Treebank dataset which is the standard dataset for evaluating language models. The dataset is used as preprocessed by \citet{mikolov2011empirical} and it consists of 929k training words, 73k validation words, and 82k test words. After preprocessing, all words consist of only lowercase letters and all numbers are replaced with a placeholder $ N $. Additionally, newlines are replaced with a special \textless eos\textgreater \ token. Finally, after preprocessing the dataset contains only the 10k most frequent words and the rest are replaced with a special \textless unk\textgreater \ token.
 
-\section{Hyperparameters}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Word Based Models}
 
 \subsection{Baselines}
 
-Three models are used as baselines.
+The following three models were used as baselines
+
 \begin{enumerate}
-    \item 
+    \item AWD-LSTM \citep{merity2017regularizing}
+    \item MoS \citep{yang2017breaking}
+    \item DOC \citep{takase2018direct}
 \end{enumerate}
+
+For every baseline the latest hyperparameters proposed in their corresponding github repositories were used. Unfortunately, due to changes in PyTorch versions, exact reproduction of their results was not possible. The results before finetuning can be seen in table \ref{table:experiments:baselines_word} and the results after finetuning can be seen in table \ref{table:experiments:baselines_word_finetuned}.
 
 \begin{table}[]
 % \centering
@@ -42,6 +47,7 @@ AWD      & n/a & 960 & 400   & 400 & 20 & 517 & 4.11  & 60.93 & 4.07  & 58.67 \\
 MoS      & 15  & 960 & 620   & 280 & 20 & 511 & 4.06  & 57.89 & 4.02  & 55.84 \\ \hline
 DoC      & 15  & 960 & 620   & 280 & 20 & 500 & 4.02  & 55.45 & 3.98  & 53.44 \\ \hline
 \end{tabular}
+\label{table:experiments:baselines_word}
 \end{table}
 
 \begin{table}[]
@@ -54,9 +60,33 @@ AWD   & 4.10  & 60.33 & 4.06  & 58.05 \\ \hline
 MoS   & 4.04  & 56.73 & 4.00  & 54.54 \\ \hline
 DoC   & 4.00  & 54.68 & 3.97  & 52.87 \\ \hline
 \end{tabular}
+\label{table:experiments:baselines_word_finetuned}
 \end{table}
 
+\subsection{NeuralODE Logit Transformations}
+
+\begin{table}[]
+\centering
+\caption{Results from performing NeuralODE-based transformations on top of the logits of a pretrained AWD-LSTM model.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+no        & no        & 0.01      & 12        & 4.09      & 59.94     & 4.06      & 57.71 \\ \hline
+yes       & no        & 0.01      & 5         & 4.10      & 60.50     & 4.06      & 58.09 \\ \hline
+no        & yes       & 0.01      & 4         & 4.11      & 60.73     & 4.07      & 58.68 \\ \hline
+yes       & yes       & 0.01      & 4         & 4.10      & 60.56     & 4.06      & 58.25 \\ \hline
+no        & no        & 0.1       & 1         & 4.09      & 60.02     & 4.06      & 57.73 \\ \hline
+yes       & no        & 0.1       & 1         & 4.11      & 60.79     & 4.06      & 58.25 \\ \hline
+no        & yes       & 0.1       & 1         & 4.11      & 60.80     & 4.07      & 58.74 \\ \hline
+yes       & yes       & 0.1       & 1         & 4.11      & 60.65     & 4.07      & 58.33 \\ \hline
+\end{tabular}
+\end{table}
+
+
 \subsection{Continuous Normalizing Flows}
+
+
+\subsubsection{Basic CNFs}
 
 \begin{table}[]
 \centering
@@ -64,14 +94,15 @@ DoC   & 4.00  & 54.68 & 3.97  & 52.87 \\ \hline
 \begin{tabular}{|l|l|l|l|l|l|l|l|}
 \hline
 \textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl}  \\ \hline
-no                                              & no                                        & 0.1                                   & 152                                   & 4.12                                     & 61.56                                   & 4.07                                     & 58.80                          \\ \hline
-yes                                             & no                                        & 0.1                                   & 160                                   & 4.15                                     & 63.20                                   & 4.11                                     & 60.97                          \\ \hline
-no                                              & yes                                       & 0.1                                   & 80                                    & 4.11                                     & 60.65                                   & 4.07                                     & 58.53                          \\ \hline
-yes                                             & yes                                       & 0.1                                   & 44                                    & 4.10                                     & 60.51                                   & 4.06                                     & 58.21                          \\ \hline
-no                                              & no                                        & 1                                     & 73                                    & 410                                      & 60.58                                   & 4.06                                     & 57.88                          \\ \hline
-yes                                             & no                                        & 1                                     & 43                                    & 4.11                                     & 60.98                                   & 4.07                                     & 58.28                          \\ \hline
-no                                              & yes                                       & 1                                     & 27                                    & 4.11                                     & 61.06                                   & 4.07                                     & 58.75                          \\ \hline
-yes                                             & yes                                       & 1                                     &                                       &                                          &                                         &                                          &                                \\ \hline
+no        & no        & 0.1       & 152       & 4.12      & 61.56     & 4.07      & 58.80 \\ \hline
+yes       & no        & 0.1       & 160       & 4.15      & 63.20     & 4.11      & 60.97 \\ \hline
+no        & yes       & 0.1       & 80        & 4.11      & 60.65     & 4.07      & 58.53 \\ \hline
+yes       & yes       & 0.1       & 44        & 4.10      & 60.51     & 4.06      & 58.21 \\ \hline
+no        & no        & 1         & 73        & 410       & 60.58     & 4.06      & 57.88 \\ \hline
+yes       & no        & 1         & 43        & 4.11      & 60.98     & 4.07      & 58.28 \\ \hline
+no        & yes       & 1         & 27        & 4.11      & 61.06     & 4.07      & 58.75 \\ \hline
+yes       & yes       & 1         & 21        & 4.12      & 61.31     & 4.08      & 58.88 \\ \hline
+
 \end{tabular}
 \end{table}
 
@@ -82,14 +113,14 @@ yes                                             & yes                           
 \begin{tabular}{|l|l|l|l|l|l|l|l|}
 \hline
 \textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
-no                    & no              & 0.01        &             &                &               &                &      \\ \hline
-yes                   & no              & 0.01        &             &                &               &                &      \\ \hline
-no                    & yes             & 0.01        &             &                &               &                &      \\ \hline
-yes                   & yes             & 0.01        &             &                &               &                &      \\ \hline
-no                    & no              & 0.1         & 7           & 4.09           & 59.49         &                &      \\ \hline
-yes                   & no              & 0.1         & 7           & 4.07           & 58.77         &                &      \\ \hline
-no                    & yes             & 0.1         & 62          & 4.05           & 57.56         &                &      \\ \hline
-yes                   & yes             & 0.1         & 62          & 4.03           & 56.50         &                &      \\ \hline
+no        & no        & 0.01      & 61        & 4.07      & 58.62     & 4.03      & 56.45 \\ \hline
+yes       & no        & 0.01      & 58        & 4.06      & 57.80     & 4.02      & 55.46 \\ \hline
+no        & yes       & 0.01      & 355       & 4.06      & 57.70     & 4.02      & 55.78 \\ \hline
+yes       & yes       & 0.01      & 338       & 4.04      & 56.65     & 4.00      & 54.53 \\ \hline
+no        & no        & 0.1       & 7         & 4.09      & 59.49     & 4.05      & 57.29 \\ \hline
+yes       & no        & 0.1       & 7         & 4.07      & 58.77     & 4.03      & 56.35 \\ \hline
+no        & yes       & 0.1       & 62        & 4.05      & 57.56     & 4.02      & 55.68 \\ \hline
+yes       & yes       & 0.1       & 62        & 4.03      & 56.50     & 4.00      & 54.42 \\ \hline
 \end{tabular}
 \end{table}
 
@@ -104,19 +135,22 @@ yes          & no     & 0.05 & 8  & 4.03  & 56.05 & 3.99  & 54.15 \\ \hline
 no           & yes    & 0.05 & 81 & 4.02  & 55.55 & 3.98  & 53.59 \\ \hline
 yes          & yes    & 0.05 & 64 & 4.00  & 54.79 & 3.97  & 53.02 \\ \hline
 no           & no     & 0.1  & 11 & 4.05  & 57.16 & 4.00  & 54.85 \\ \hline
-yes          & no     & 0.1  &    &       &       &       &       \\ \hline
+% yes          & no     & 0.1  &    &       &       &       &       \\ \hline
 no           & yes    & 0.1  & 43 & 4.02  & 55.63 & 3.98  & 53.66 \\ \hline
 yes          & yes    & 0.1  & 46 & 4.00  & 54.86 & 3.97  & 53.14 \\ \hline
 no           & no     & 1    & 49 & 4.06  & 57.84 & 4.01  & 55.14 \\ \hline
-yes          & no     & 1    &    &       &       &       &       \\ \hline
+% yes          & no     & 1    &    &       &       &       &       \\ \hline
 no           & yes    & 1    & 11 & 4.07  & 58.62 & 4.04  & 56.58 \\ \hline
 yes          & yes    & 1    & 15 & 4.06  & 58.00 & 4.03  & 56.10 \\ \hline
 \end{tabular}
 \end{table}
 
-\subsection{Context Conditioned CNFs}
 
-Due to the issues discussed in section \ref{section:cnf_lm:issues_cc_cnfs} all word-based Context Conditioned CNFs are trained using Importance Sampling. In every training iteration 20 labels are obtained from the unigram distribution of the training set and are concatenated to the true label. Furthermore, the RNN base of the models is initialized with the weights of a pretrained AWD-LSTM model.
+\subsubsection{Context Conditioned CNFs}
+
+Due to the issues discussed in section \ref{section:cnf_lm:issues_cc_cnfs} all word-based Context Conditioned CNFs are trained using Importance Sampling. In every training iteration 20 labels are obtained from the unigram distribution of the training set and are concatenated to the true label. This drastically speeds up training, however evaluating on the original validation and test set is still not feasible. Therefore, when evaluating Context Conditioned CNFs, only the first 400 samples from the validation and the test set are used.
+
+Furthermore, the RNN base of the models is initialized with the weights of a pretrained AWD-LSTM model.
 
 \begin{table}[]
 \centering
@@ -135,9 +169,16 @@ yes          & yes    & 1   &    &       &      &       &      \\ \hline
 \end{tabular}
 \end{table}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Character Based Models}
 
-When using Context Conditioned CNFs for character models the vocabulary is limited to around 50do not suffer from the issues mentioned in section \ref{section:cnf_lm:issues_cc_cnfs} they are trained using the entire vocabulary.
+Training character-based models on Penn Tree Bank \citet{mikolov2011empirical} was performed using same preprocessing is used as when training word-based model. This means that only the 10000 most frequent words are kept, and all others are substituted with an \textless unk\textgreater \ token. This drastically reduces the number of possible transitions between characters and simplifies the problem.
+
+Additionall using Context Conditioned CNFs for character models the size of the vocabulary is usually less than 50. Therefore, character based Context Conditioned CNFs do not suffer from the issues mentioned in section \ref{section:cnf_lm:issues_cc_cnfs} and are trained using the entire vocabulary.
+
+For character-based models only one baseline was used, the AWD-LSTM \citep{merity2017regularizing} model. Similar to the word-based models, the lates hyperparameters proposed in the official github repo were used. Exact reproduction of the results in their paper was not possible due to differences in PyTorch versions. The baseline results can be seen in table \ref{table:experiments:baselines_char}.
+
+Evaluating the full partition function, even though feasible, is still not fast enough to train these models from scratch. Therefore, similarly to the case of word-based models, the RNN weights are initialized with the weights of the pretrained baseline AWD-LSTM model. The results can be seen in table \ref{table:experiments:cnfh_characters}.
 
 \begin{table}[]
 \centering
@@ -147,6 +188,7 @@ When using Context Conditioned CNFs for character models the vocabulary is limit
 \textbf{model} & \textbf{h} & \textbf{lasth} & \textbf{emb} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vbpc} & \textbf{tloss} & \textbf{tbpc} \\ \hline
 awd       & 1000       & 200            & 200          & 0.002       & 364         & 0.84           & 1.211         & 0.82           & 1.183         \\ \hline
 \end{tabular}
+\label{table:experiments:baselines_char}
 \end{table}
 
 \begin{table}[]
@@ -161,4 +203,5 @@ yes             & 1e-4        & 28          & 0.84           & 1.212         & 0
 no              & 2e-3        & 1           & 0.92           & 1.329         & 0.90           & 1.295         \\ \hline
 yes             & 2e-3        & 3           & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
 \end{tabular}
+\label{table:experiments:cnfh_characters}
 \end{table}

@@ -73,6 +73,7 @@ As shown in figure \ref{figure:ode:odenets_visualization}, we need to optimize a
     L(z(t_1)) = L \left( z(t_0) + \int_{t_0}^{t_1} f(z(t), \ t; \ \theta ) \right) = L(ODESolve(z(t_0), f, t_0, t_1))
 \end{equation}
 
+\osc{f or theta??}
 The parameters of the ODENet, are the parameters of the neural network $ f $ or $ \theta $, which is why we are interested in the derivative of the loss function with respect to $ \theta $. \citet{pontryagin2018mathematical} show that the derivative takes the form of another initial value problem
 
 \begin{equation}
@@ -85,7 +86,7 @@ Where $ \nicefrac{\partial L}{\partial z(t)} $ is known as the \emph{adjoint sta
 \section{Neural ODEs for Language Modelling}
 \label{section:ode:ode_lms}
 
-We can look at language modelling as a two step process. First, we encode the context into a hidden state vector, and then using the hidden state vector we generate a distribution over the vocabulary. The former is commonly done by an LSTM based RNN. Then, given the hidden state, a Softmax layer is used to obtain the probability distribution over the vocabulary. In section \ref{section:limitations:softmax_bottleneck}, it is discussed how having this Softmax layer introduces a theoretical limitation on LMs, and in sections \ref{section:related_work:mos} and \ref{section:related_work:doc} is discussed how models like MoS \citep{yang2017breaking} and DoC \citep{takase2018direct} have tried to break it. In this section, I propose a simple model (figure \ref{figure:ode:ode_logits}) based on Neural ODEs, that is not restricted by the Softmax Bottleneck problem.
+We can look at language modelling as a two step process. First, we encode the context into a hidden state vector, and then using the hidden state vector we generate a distribution over the vocabulary. The former is commonly done by an LSTM\osc{-}based RNN. Then, given the hidden state, a Softmax layer is used to obtain the probability distribution over the vocabulary. In section \ref{section:limitations:softmax_bottleneck}, it is discussed how having this Softmax layer introduces a theoretical limitation on LMs, and in sections \ref{section:related_work:mos} and \ref{section:related_work:doc} is discussed how models like MoS \citep{yang2017breaking} and DoC \citep{takase2018direct} have tried to break it. In this section, I \osc{we} propose a simple model (figure \ref{figure:ode:ode_logits}) based on Neural ODEs, that is not restricted by the Softmax Bottleneck problem.
 
 \begin{center}
     \textcolor{red}{\emph{DIAGRAM OF WHAT THE MODEL LOOKS LIKE}}

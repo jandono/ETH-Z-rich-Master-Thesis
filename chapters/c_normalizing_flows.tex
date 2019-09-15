@@ -4,7 +4,8 @@
 \section{Introduction to Normalizing Flows}
 \label{section:cnf:normalizing_flows}
 
-Section ends with a question: "What if we can start with a simple distribution and distort it into a more complex one?". To answer this question, let us first examine what happens with the densities as we transform some random variable.
+\osc{What section?}
+Section ends with a question: "What if we can start with a simple distribution and distort it into a more complex one?". To answer this question, let us first examine what happens with \osc{happens to} the densities as we transform some random variable.
 
 Let $ x \in R^d $ be a random variable with an underlying probability density function $ P_x $ and $ f: R^d \mapsto R^d $ be an invertible transformation. Then, if
 
@@ -12,7 +13,11 @@ Let $ x \in R^d $ be a random variable with an underlying probability density fu
     y = f(x),
 \end{displaymath}
 
+\osc{why not $P_X(x)$ and $P_Y(y)$?}
+
 i.e. we obtain the random variable $ y $ by transforming $ x $ using $ f $, the probability density function $ P_y $ of $ y $ can be obtained using the change of variables formula
+
+\osc{$\det$ not $det$}
 
 \begin{equation}
     \label{equation:cnf:nf:change_density}
@@ -111,6 +116,8 @@ This combination of NeuralODEs and Normalizing Flows is called \emph{Continuous 
 \end{figure}
 
 Unfortunately, the overall complexity of the method above is still $ \mathcal{O}(d^2) $ due to the Jacobian, which even though better, is still restrictive. \citet{grathwohl2018ffjord} further optimize the above method and reduce the overall complexity to $ \mathcal{O}(d) $. They achieve this in two steps. First, Vector-Jacobian products can be computed efficiently using reverse-mode automatic differentiation. Secondly, they show that they can get unbiased estimates of the trace of the Jacobian, by using the Hutchinson’s trace estimator \citep{hutchinson1990stochastic}. Consequently, they claim that Continuous Normalizing Flows implemented in this fashion can be considered unrestricted due to the free-form Jacobian of the transformation $ f $.
+
+\osc{don't put spaces before footnotes, and put all urls into \url{https://example.com/}}
 
 \citet{grathwohl2018ffjord} additionally provide a PyTorch framework \footnote{https://github.com/rtqichen/ffjord/} with the previously mentioned improvements. Within their framework we can apply CNFs to random variables and log densities as
 
