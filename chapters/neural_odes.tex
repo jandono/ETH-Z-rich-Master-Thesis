@@ -4,28 +4,28 @@
 \section{Introduction to Neural ODEs}
 \label{section:ode:introduction}
 
-In recent years Residual Networks (ResNet) \citep{he2016deep} have brought a great success in Deep Learning and especially in computer vision. They have proven to be effective against the vanishing gradient and the degradation problems and have drastically eased the optimization of very deep neural networks. If we refer to the output vector of each layer as $ z_t $ where $ t $ stands for the layer, then Residual Networks can be mathematically described as:
+In recent years Residual Networks (ResNet) \citep{he2016deep} have brought a great success in Deep Learning and especially in computer vision. They have proven to be effective against the vanishing gradient and the degradation problems and have drastically eased the optimization of very deep neural networks. If we refer to the output vector of each layer as $ z_t $ where $ t $ stands for the layer, then Residual Networks can be mathematically described as
 
 \begin{equation}
     \label{equation:ode:resnet}
-    z_{t+1} = z_{t} + f(z_{t}; \ \theta_{t})
+    z_{t+1} = z_{t} + f(z_{t}; \ \theta_{t}),
 \end{equation}
 
 where $ t \in \{0, ..., T\} $, $ z_t \in R^D $ and $ \theta_t $ are the parameters of the \emph{t}-th layer. These iterative updates can be interpreted as an Euler discretization of a continuous transformation \citep{lu2017beyond, haber2017stable, ruthotto2018deep}.
 
-Moreover, as we add more layers and take smaller steps, in the limit, we parameterize the continuous dynamics of the hidden state using an ordinary differential equation (ODE) \textcolor{red}{vo abbreviations ODE} specified by a neural network:
+Moreover, as we add more layers and take smaller steps, in the limit, we parameterize the continuous dynamics of the hidden state using an ordinary differential equation (ODE) specified by a neural network
 
 \begin{equation}
     \label{equation:ode:odes}
-    \frac{d z(t)}{d t} = f(z(t), \ t; \ \theta )
+    \frac{d z(t)}{d t} = f(z(t), \ t; \ \theta ).
 \end{equation}
 
-\citet{chen2018neural} introduced this concept as a new family of deep neural network models, where the neural network outputs the gradient of the hidden state with respect to the depth. Then, given an initial state and the differential equation parameterized by the neural network, the final state is obtained by solving an ODE. The analogy they make is the one that considers this family of models to be the continuous case of ResNets. Figure \ref{figure:ode:resnet_vs_ode}, depicts the similarities and differences between ResNets and neural networks based on ODEs. They call this family of models \emph{Neural ODEs} or \emph{ODENets}, and provide an open source framework implemented in PyTorch\footnote{https://github.com/rtqichen/torchdiffeq}.
+\citet{chen2018neural} introduced this concept as a new family of deep neural network models, where the neural network outputs the gradient of the hidden state with respect to the depth. Then, given an initial state and the differential equation parameterized by the neural network, the final state is obtained by solving an ODE. The analogy they make is the one that considers this family of models to be the continuous case of ResNets. Figure \ref{figure:ode:resnet_vs_ode}, depicts the similarities and differences between ResNets and neural networks based on ODEs. They call this family of models \emph{Neural ODEs} or \emph{ODENets}, and provide an open source framework implemented in PyTorch\footnote{\url{https://github.com/rtqichen/torchdiffeq}}.
 
 \begin{figure}[ht]
       \centering
       \includegraphics[width=0.7\columnwidth]{figures/resnet_vs_odes.png}
-      \caption{\emph{Left}: A Residual network defines a discrete sequence of finite transformations. \emph{Right}: A ODE network defines a vector that continuously transforms the state \citep{chen2018neural}.}
+      \caption{\emph{Left}: A Residual network defines a discrete sequence of finite transformations. \emph{Right}: An ODE network defines a vector field that continuously transforms the state \citep{chen2018neural}.}
       \label{figure:ode:resnet_vs_ode}
 \end{figure}
 
@@ -34,7 +34,7 @@ In equation \ref{equation:ode:odes}, $ z(t) $ is the hidden state in the \emph{t
 \begin{align}
     z(t_1) & = z(t_0) + \int_{t_0}^{t_1} \frac{d z(t)}{d t} \ dt \\
     & = z(t_0) + \int_{t_0}^{t_1} f(z(t), \ t; \ \theta ) \ dt \\
-    & = ODESolve(z(t_0), f, t_0, t_1)
+    & = ODESolve(z(t_0), f, t_0, t_1).
 \end{align}
 
 According to the equations above, we can conclude that, $ f $ is learning a vector field, which is why Neural ODEs can potentially be seen as models with infinite amount of layers. To be specific, the number of layers is dynamically decided and delegated to the ODE solver. Furthermore, \citet{chen2018neural} developed their framework in way that any ODE solver can be used as a blackbox. This allows for more flexibility and decouples the framework from the ODE solver. General purpose ODENets are illustrated on Figure \ref{figure:ode:odenets_visualization}.
@@ -50,8 +50,8 @@ Defining neural network models in this fashion has several advantages \cite{chen
 \begin{itemize}
     \item \textbf{Memory Efficiency.} In section \ref{section:ode:backpropagation} it is discussed how circumventing backpropagation through the operations of the ODE solver saves a lot of memory.
     \item \textbf{Adaptive Computation.} Nowadays, ODE solvers provide guarantees about the growth of the approximation error, monitor the error, and adapt their evaluation strategy on the fly to achieve the required level of accuracy. This allows for explicit control over the speed versus precision trade-off.
-    \item \textbf{Parameter Efficiency.} In section 3 of their work, \citet{chen2018neural} show demonstrate how this family of models ties the weights of nearby layers, resulting in fewer parameters without the loss of performance.
-    \item \textbf{Scalable and invertible normalizing flows.} In chapter \ref{chapter:cnf}, it is shown how one side effect of going in the continuous domain, allows for an easier and unrestricted use of normalizing flows. As a result, normalizing flows can be used for language modelling, as shown in chapter \ref{chapter:cnf_lm}.
+    \item \textbf{Parameter Efficiency.} In section 3 of their work, \citet{chen2018neural} demonstrate how this family of models ties the weights of nearby layers, resulting in fewer parameters without the loss of performance.
+    \item \textbf{Scalable and invertible normalizing flows.} Chapter \ref{chapter:cnf} sshows how one side effect of going in the continuous domain, allows for an easier and unrestricted use of normalizing flows. As a result, normalizing flows can be used for language modelling, as shown in chapter \ref{chapter:cnf_lm}.
     \item \textbf{Continuous time-series models.} RNNs are the de-facto architecture for time-series models. Unfortunately, they require that the observations are discretized and bound to specific emission intervals. On the other hand, continuously defined dynamics can naturally take care of observations that arrive at arbitrary times.
 \end{itemize}
 
@@ -73,8 +73,7 @@ As shown in figure \ref{figure:ode:odenets_visualization}, we need to optimize a
     L(z(t_1)) = L \left( z(t_0) + \int_{t_0}^{t_1} f(z(t), \ t; \ \theta ) \right) = L(ODESolve(z(t_0), f, t_0, t_1))
 \end{equation}
 
-\osc{f or theta??}
-The parameters of the ODENet, are the parameters of the neural network $ f $ or $ \theta $, which is why we are interested in the derivative of the loss function with respect to $ \theta $. \citet{pontryagin2018mathematical} show that the derivative takes the form of another initial value problem
+The parameters of the ODENet are the parameters of the neural network $ f $, which is why we are interested in the derivative of the loss function with respect to $ \theta $. \citet{pontryagin2018mathematical} show that the derivative takes the form of another initial value problem
 
 \begin{equation}
     \label{loss_derivative}
@@ -86,11 +85,7 @@ Where $ \nicefrac{\partial L}{\partial z(t)} $ is known as the \emph{adjoint sta
 \section{Neural ODEs for Language Modelling}
 \label{section:ode:ode_lms}
 
-We can look at language modelling as a two step process. First, we encode the context into a hidden state vector, and then using the hidden state vector we generate a distribution over the vocabulary. The former is commonly done by an LSTM\osc{-}based RNN. Then, given the hidden state, a Softmax layer is used to obtain the probability distribution over the vocabulary. In section \ref{section:limitations:softmax_bottleneck}, it is discussed how having this Softmax layer introduces a theoretical limitation on LMs, and in sections \ref{section:related_work:mos} and \ref{section:related_work:doc} is discussed how models like MoS \citep{yang2017breaking} and DoC \citep{takase2018direct} have tried to break it. In this section, I \osc{we} propose a simple model (figure \ref{figure:ode:ode_logits}) based on Neural ODEs, that is not restricted by the Softmax Bottleneck problem.
-
-\begin{center}
-    \textcolor{red}{\emph{DIAGRAM OF WHAT THE MODEL LOOKS LIKE}}
-\end{center}
+We can look at language modelling as a two step process. First, we encode the context into a hidden state vector, and then using the hidden state vector we generate a distribution over the vocabulary. The former is commonly done by an LSTM-based RNN. Then, given the hidden state, a Softmax layer is used to obtain the probability distribution over the vocabulary. In section \ref{section:limitations:softmax_bottleneck}, it is discussed how having this Softmax layer introduces a theoretical limitation on LMs, and in sections \ref{section:related_work:mos} and \ref{section:related_work:doc} is discussed how models like MoS \citep{yang2017breaking} and DOC \citep{takase2018direct} have tried to break it. In this section, a simple model based on Neural ODEs is proposed, that is not restricted by the Softmax Bottleneck problem.
 
 Let $ V $ be the vocabulary, $ h $ be the hidden state, $ d $ be the hidden state dimensionality, $ L \in R^{d \times |V|} $ be the output projection matrix (if weights are tied \citep{inan2016tying} this is also the embedding matrix), and $ y^* \in R^{|V|} $ be a one-hot encoded ground truth vector. The model can then be represented as
 
@@ -122,4 +117,4 @@ where $ k $ is the dimensionality of the bottleneck and is usually in the low hu
 
 In the simplest form of $ f $, $ t $ can be ignored. This is the same as stating that the gradient does not depend on it and we have a constant vector field as we move through time. Other possibilities are to concatenate it to the input or use it in a conjunction with Hypernetworks \citep{ha2016hypernetworks} to generate $ W_f $ and $ H_f $ based on $ t $. Both approaches are suggested in \citet{chen2018neural} and \citet{grathwohl2018ffjord}. Finally, we can use \emph{Cross-Entropy} for training.
 
-The main idea behind this approach is to solve the Softmax Bottleneck by applying non-linear transformations on the logits, similarly to what is done in \citep{ganea2019breaking}. The difference between the two approaches lies in the nature of the non-linearities applied. \citet{ganea2019breaking} apply monotonic pointwise non-linearities, and here we use a NeuralODE.
+The main idea behind this approach is to solve the Softmax Bottleneck by applying non-linear transformations on the logits, similarly to what is done in \citep{ganea2019breaking}. The difference between the two approaches lies in the nature of the non-linearities applied. \citet{ganea2019breaking} apply monotonic pointwise non-linearities, and here we use a Neural ODE.

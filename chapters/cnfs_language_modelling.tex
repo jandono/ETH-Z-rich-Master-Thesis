@@ -6,9 +6,7 @@
 
 It was previously shown how Normalizing Flows are a powerful technique to distort simple distributions into complex ones. Until recently, this was only feasible on small toy datasets, however, due to the advances in \citet{chen2018neural} and \citet{grathwohl2018ffjord} and moving to the continuous domain, it has become a viable technique for solving more complex problems.
 
-\osc{1st person to 3rd person}
-
-In this chapter I go through several different ways of incorporating Continuous Normalizing Flows in language modelling and I discuss both their theoretical and practical implications.
+This chapter goes through several different ways of incorporating Continuous Normalizing Flows in language modelling and discusses both their theoretical and practical implications.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,8 +91,6 @@ Chapter \ref{chapter:limitations} introduced two limitations on standard languag
 
 Let $ V $ be the vocabulary, $ h \in R^d $ be the final hidden state, $ \log P_h^0(\ . \ ) $ be the initial log-densities commonly obtained from a linear layer with weights $ E \in R^{|V| \times d} $ and additional biases. Finally, let $ f $ be a neural network parameterizing the gradient. Then, the forward pass for one training sample would look like:
 
-\osc{$p(z_t)$? not $pz_t$}
-
 \begin{align}
     \label{equation:cnf_lm:cnf_lm_1}
     z_{t_0} &= E , \ z_{t_0} \in R^{|V| \times d} \\
@@ -116,7 +112,7 @@ Once we have an initial distribution, in equation \ref{equation:cnf_lm:cnf_lm_3}
 
 where $ W_1 \in R^{d \ \times \ d+1} $ and $ W_2 \in R^{d \times d} $.
 
-Finally, in equation \ref{equation:cnf_lm:cnf_lm_4} we obtain the final log-densities by subtracting the change in log-density from the initial distribution. At the end, we obtain log-densities of a distribution over the embedding space. To transform them to discrete probabilities, we can simply take the softmax:
+In equation \ref{equation:cnf_lm:cnf_lm_4} we obtain the final log-densities by subtracting the change in log-density from the initial distribution. At the end, we obtain log-densities of a distribution over the embedding space. To transform them to discrete probabilities, we can simply take the softmax:
 
 \begin{displaymath}
     q = Softmax(\log pz_{t_1})    
@@ -172,13 +168,11 @@ Now the original matrix can be written as
 
 We know that the rank of the sum of two matrices is bounded by
 
-\osc{$\leq$ everywhere instead of $<=$}
-
 \begin{displaymath}
-    rank(A + B) <= rank(A) + rank(B).
+    \rank(A + B) \leq \rank(A) + \rank(B).
 \end{displaymath}
 
-As it was previously shown that $ A $ is a low rank matrix and $ rank(B) = 1 $, we can conclude that this approach indeed does not solve the \emph{Softmax Bottleneck} problem. Additionally, this model is also restricted by the \emph{Single Transformation} problem described in section \ref{section:limitations:single_transformation}. In the next section, it is discussed how certain changes can release the model from both limitations.
+As it was previously shown that $ A $ is a low rank matrix and $ \rank(B) = 1 $, we can conclude that this approach indeed does not solve the \emph{Softmax Bottleneck} problem. Additionally, this model is also restricted by the \emph{Single Transformation} problem described in section \ref{section:limitations:single_transformation}. In the next section, it is discussed how certain changes can release the model from both limitations.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Context Conditioned CNFs}
@@ -224,16 +218,16 @@ Finally, we can train the model with Cross-Entropy
     loss = CrossEntropy(p, q)
 \end{displaymath}
 
-where $ p $ is the true distribution and is represented by a one \textcolor{red}{-} hot encoded ground truth vector.
+where $ p $ is the true distribution and is represented by a one-hot encoded ground truth vector.
 
 To see whether this model still suffers from the \emph{Softmax Bottleneck} problem, we can do the same test as in the previous section. Let us first create a matrix for our model in the same manner
 
 \begin{displaymath}
     \begin{matrix}
     \begin{bmatrix}
-       \log P_0(w_1 | c_1) - \Delta \log P(w_1, c_1) & \hdots & \log P_0(w_M | c_1) - \Delta \log P(w_M | c_1)  \\
+       \log P_0(w_1 | c_1) - \Delta \log P(w_1| c_1) & \hdots & \log P_0(w_M | c_1) - \Delta \log P(w_M | c_1)  \\
        \vdots & \ddots & \vdots \\
-       \log P_0(w_1 | c_N) - \Delta \log P(w_1, c_2) & \hdots & \log P_0(w_M | c_N) - \Delta \log P(w_M | c_N)
+       \log P_0(w_1 | c_N) - \Delta \log P(w_1| c_N) & \hdots & \log P_0(w_M | c_N) - \Delta \log P(w_M | c_N)
       \end{bmatrix}
     \end{matrix}
 \end{displaymath}
@@ -265,10 +259,10 @@ and $ B $
 The rank of the original matrix is still bounded by the same rule, i.e.
 
 \begin{displaymath}
-    rank(A + B) <= rank(A) + rank(B)
+    \rank(A + B) \leq \rank(A) + \rank(B)
 \end{displaymath}
 
-however, the rank of matrix $ B $ can now go up to $ N $ or $ M $, i.e. $ rank(B) <= min(N, \ M) $. Therefore, the rank of $ A + B $ is not constrained by the rank of $ A $ and the sum can potentially be a full-rank matrix. This proves that the model is indeed not limited by the \emph{Softmax Bottleneck}. Additionally, this model starts with a simple initial distribution and distorts it into an arbitrary complex one based on the context. This means that the model is not limited by the \emph{Single Transformation} problem by construction, as we adapt the nature of the distribution based on the context. Therefore, the entire model is more powerful and unrestricted. However, this slight change has certain implications on the computational efficiency of the entire method.
+however, the rank of matrix $ B $ can now go up to $ N $ or $ M $, i.e. $ \rank(B) \leq min(N, \ M) $. Therefore, the rank of $ A + B $ is not constrained by the rank of $ A $ and the sum can potentially be a full-rank matrix. This proves that the model is indeed not limited by the \emph{Softmax Bottleneck}. Additionally, this model starts with a simple initial distribution and distorts it into an arbitrary complex one based on the context. This means that the model is not limited by the \emph{Single Transformation} problem by construction, as we adapt the nature of the distribution based on the context. Therefore, the entire model is more powerful and unrestricted. However, this slight change has certain implications on the computational efficiency of the entire method.
 
 \section{Issues with Context Conditioned CNFs}
 \label{section:cnf_lm:issues_cc_cnfs}
@@ -319,25 +313,23 @@ Equation \ref{equation:cnf_lm:cnfs_ce:ce_nll} shows depicts a connection between
 
 where $ l_{w,c} $ represents the logit for word $ w $ given context $ c $. If we expand we get
 
-\osc{$\exp$ not $exp$ everywhere}
-
 \begin{displaymath}
-    L_{w, c} = - l_{w, c} + \log \sum_{w_i \in V} exp(l_{w_i,c}).
+    L_{w, c} = - l_{w, c} + \log \sum_{w_i \in V} \exp(l_{w_i,c}).
 \end{displaymath}
 
 Then, if we take the gradient with respect to the model's parameters $ \theta $ we obtain
 
 \begin{align}
-    \nabla_\theta L_{w, c} &= - \nabla_\theta l_{w, c} + \nabla_\theta \log \sum_{w_i \in V} exp(l_{w_i,c}) \\
-                           &= - \nabla_\theta l_{w, c} + \frac{1}{\sum_{w_i \in V} exp(l_{w_i,c})} \sum_{w_i \in V} \nabla_\theta exp(l_{w_i,c}) \\
-                           &= - \nabla_\theta l_{w, c} + \frac{1}{\sum_{w_i \in V} exp(l_{w_i,c})} \sum_{w_i \in V} exp(l_{w_i,c}) \nabla_\theta l_{w_i, c} \\
-                           &= - \nabla_\theta l_{w, c} + \sum_{w_i \in V} \frac{exp(l_{w_i,c})}{\sum_{w_j \in V} exp(l_{w_j,c})} \nabla_\theta l_{w_i, c}
+    \nabla_\theta L_{w, c} &= - \nabla_\theta l_{w, c} + \nabla_\theta \log \sum_{w_i \in V} \exp(l_{w_i,c}) \\
+                           &= - \nabla_\theta l_{w, c} + \frac{1}{\sum_{w_i \in V} \exp(l_{w_i,c})} \sum_{w_i \in V} \nabla_\theta \exp(l_{w_i,c}) \\
+                           &= - \nabla_\theta l_{w, c} + \frac{1}{\sum_{w_i \in V} \exp(l_{w_i,c})} \sum_{w_i \in V} \exp(l_{w_i,c}) \nabla_\theta l_{w_i, c} \\
+                           &= - \nabla_\theta l_{w, c} + \sum_{w_i \in V} \frac{\exp(l_{w_i,c})}{\sum_{w_j \in V} \exp(l_{w_j,c})} \nabla_\theta l_{w_i, c}
 \end{align}
 
 The fraction inside the sum is the model's probability of $ w_i $ given context $ c $
 
 \begin{displaymath}
-    P_\theta(w_i | c) = \frac{exp(l_{w_i,c})}{\sum_{w_j \in V} exp(l_{w_j,c})},
+    P_\theta(w_i | c) = \frac{\exp(l_{w_i,c})}{\sum_{w_j \in V} \exp(l_{w_j,c})},
 \end{displaymath}
 
 so the gradient can be written as

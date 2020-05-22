@@ -1,1 +1,11 @@
-\chapter{Conclusion and Future Work}
+\chapter{Conclusion}
+
+Language modelling remains one of the most important subfields of Natural Language Processing. Additionally, its real life applications are increasing everyday. As such, it is an extremely active research area of extreme importance to the Natural Language Processing community. Especially important class of models are the RNN-based language models. Due to the relatively small number of parameters in comparison to transformer-based models, they represent the de facto model for commercial language modelling. However, recent findings \citep{yang2017breaking} show several limitations on standard RNN-based language modelling.
+
+In this thesis, I have introduced several different models for language modelling based on a novel concept. Namely, I have successfully integrated NeuralODEs \citep{chen2018neural} and Continuous Normalizing Flows \citep{grathwohl2018ffjord} with RNN-based language models. For every model, I have introduced and discussed the theoretical and practical limitations. Finally, I have summarized my findings and I have managed to improve on some of the baselines.
+
+\section{Future Work}
+
+The main limitation of this novel family of language models is their computational complexity. Since fast and efficient training was not possible, there was no room for extensive hyperparameter search. This means that most of the models manage to either beat their respective baseline or get close to it, by using hyperparameters that are not optimized for them. As performing an extensive hyperparameter search usually results in an improvement of several metric points, it is interesting to see how much of an improvement we are going to see.
+
+For the same reason, all models are trained by first initializing them with the weights of the baseline model they are compared against. It is possible that this initialization puts the model in a sub-optimal region of the optimizational space, as seems to be the case with character-based models. Given enough resources and time, it is interesting to see how will these models perform when trained from scratch.

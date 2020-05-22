@@ -110,7 +110,7 @@ In this equation $ W_j \in R^{d \times d_{h^n}} $ is a weight matrix. Additional
 Finally, if we construct the matrix containing all log-probabilities given all contexts for DOC, we can notice that it takes the form of
 
 \begin{displaymath}
-    \hat{A} = \log \sum_{j=1}^J \Pi \ Softmax(K_j \Tilde{W}^T)
+    \hat{A}_{DOC} = \log \sum_{j=1}^J \Pi \ Softmax(K_j \Tilde{W}^T)
 \end{displaymath}
 
-where $ \Pi $ is a diagonal matrix whose entries are the weights $ \pi_{j, c} $ and $ K_j $ is a matrix whose rows are vectors $ k_{j,c} $. As $ \hat{A} $ is obtained using a non-linear transformation, $ \hat{A} $ can be of an arbitrary high rank is not limited by the Softmax Bottleneck explained in section \ref{section:limitations:softmax_bottleneck}.
+where $ \Pi $ is a diagonal matrix whose entries are the weights $ \pi_{j, c} $ and $ K_j $ is a matrix whose rows are vectors $ k_{j,c} $. As $ \hat{A}_{DOC} $ is obtained using a non-linear transformation, $ \hat{A}_{DOC} $ can be of an arbitrary high rank and is not limited by the Softmax Bottleneck explained in section \ref{section:limitations:softmax_bottleneck}.

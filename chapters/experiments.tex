@@ -2,7 +2,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Legend}
-This section explains the abbreviations in the tables below mean.
+This section explains what the abbreviations in the tables below mean.
 
 \begin{itemize}
     \item \emph{model} - the model being used. AWD stands for AWD-LSTM \citep{merity2017regularizing}, MoS \citep{yang2017breaking} stands for Mixture of Softmaxes and DoC stands for Direct Output Connections \citep{takase2018direct}.
@@ -35,9 +35,9 @@ The following three models were used as baselines
     \item DOC \citep{takase2018direct}
 \end{enumerate}
 
-For every baseline the latest hyperparameters proposed in their corresponding github repositories were used. Unfortunately, due to changes in PyTorch versions, exact reproduction of their results was not possible. The results before finetuning can be seen in table \ref{table:experiments:baselines_word} and the results after finetuning can be seen in table \ref{table:experiments:baselines_word_finetuned}.
+For every baseline, the latest hyperparameters proposed in their corresponding github repositories were used. Unfortunately, due to changes in PyTorch versions, exact reproduction of their results was not possible. The results before finetuning are presented in table \ref{table:experiments:baselines_word} and the results after finetuning are presented in table \ref{table:experiments:baselines_word_finetuned}.
 
-\begin{table}[]
+\begin{table}
 % \centering
 \caption{Results from baseline word-based models before finetuning.}
 \begin{tabular}{|l|l|l|l|l|l|l|l|l|l|l|}
@@ -45,12 +45,12 @@ For every baseline the latest hyperparameters proposed in their corresponding gi
 \textbf{model}    & \textbf{exp} & \textbf{h}   & \textbf{lasth} & \textbf{emb} & \textbf{lr} & \textbf{ep}  & \textbf{vloss} & \textbf{vppl}  & \textbf{tloss} & \textbf{tppl}  \\ \hline
 AWD      & n/a & 960 & 400   & 400 & 20 & 517 & 4.11  & 60.93 & 4.07  & 58.67 \\ \hline
 MoS      & 15  & 960 & 620   & 280 & 20 & 511 & 4.06  & 57.89 & 4.02  & 55.84 \\ \hline
-DoC      & 15  & 960 & 620   & 280 & 20 & 500 & 4.02  & 55.45 & 3.98  & 53.44 \\ \hline
+DOC      & 15  & 960 & 620   & 280 & 20 & 500 & 4.02  & 55.45 & 3.98  & 53.44 \\ \hline
 \end{tabular}
 \label{table:experiments:baselines_word}
 \end{table}
 
-\begin{table}[]
+\begin{table}
 \centering
 \caption{Results from baseline word-based models after finetuning.}
 \begin{tabular}{|l|l|l|l|l|}
@@ -58,150 +58,210 @@ DoC      & 15  & 960 & 620   & 280 & 20 & 500 & 4.02  & 55.45 & 3.98  & 53.44 \\
 \textbf{model} & \textbf{vloss} & \textbf{vppl}  & \textbf{tloss} & \textbf{tppl}  \\ \hline
 AWD   & 4.10  & 60.33 & 4.06  & 58.05 \\ \hline
 MoS   & 4.04  & 56.73 & 4.00  & 54.54 \\ \hline
-DoC   & 4.00  & 54.68 & 3.97  & 52.87 \\ \hline
+DOC   & 4.00  & 54.68 & 3.97  & 52.87 \\ \hline
 \end{tabular}
 \label{table:experiments:baselines_word_finetuned}
 \end{table}
 
 \subsection{NeuralODE Logit Transformations}
+This model is based on Neural ODEs and is explained in section \ref{section:ode:ode_lms}. It performs nonlinear transformations on the logits by using an ODENet on top of the initial AWD-LSTM model. The architecture of the neural network, that specifies the differential equation, in the experiments is defined as
 
-\begin{table}[]
+\begin{displaymath}
+    f(l, \ t) = W \ Softplus(W_f^T 
+        \begin{bmatrix}
+           l \\
+           t \\
+        \end{bmatrix}),
+        \ W_f \in R^{|V|+1 \ \times \ k}, \ W \in R^{|V| \ \times \ k},
+\end{displaymath}
+
+where $ l $ are the logits obtained from a pre-trained AWD-LSTM, $ t $ is the time and $ W, \ W_f $ are trainable parameters. Additionally, $ |V| $ is the size of the vocabulary and $ k $ is a dimensionality bottleneck and set to be equal to the dimensionality of the embeddings. The hyperparameters being used are the latest hyperparameters proposed in the official AWD-LSTM repository. The results of the experiments for this model are presented in table \ref{table:experiments:neural_odes}.
+
+\begin{table}
 \centering
-\caption{Results from performing NeuralODE-based transformations on top of the logits of a pretrained AWD-LSTM model.}
-\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\caption{Results from performing NeuralODE-based transformations on top of the logits of a pre-trained AWD-LSTM model. Several different experiments manage to improve on the baseline. The most notable is experiment 1, as it improves on the baseline by a whole perplexity point. The perplexities on the validation and test sets for this experiment can be seen in bold. Additionally, for this particular model using a learning rate greater or equal to 0.1 results in instant overfitting.}
+
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
 \hline
-\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
-no        & no        & 0.01      & 12        & 4.09      & 59.94     & 4.06      & 57.71 \\ \hline
-yes       & no        & 0.01      & 5         & 4.10      & 60.50     & 4.06      & 58.09 \\ \hline
-no        & yes       & 0.01      & 4         & 4.11      & 60.73     & 4.07      & 58.68 \\ \hline
-yes       & yes       & 0.01      & 4         & 4.10      & 60.56     & 4.06      & 58.25 \\ \hline
-no        & no        & 0.1       & 1         & 4.09      & 60.02     & 4.06      & 57.73 \\ \hline
-yes       & no        & 0.1       & 1         & 4.11      & 60.79     & 4.06      & 58.25 \\ \hline
-no        & yes       & 0.1       & 1         & 4.11      & 60.80     & 4.07      & 58.74 \\ \hline
-yes       & yes       & 0.1       & 1         & 4.11      & 60.65     & 4.07      & 58.33 \\ \hline
+\textbf{\#} & \textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+1       & no        & no        & 0.01      & 12        & 4.09      & \textbf{59.94}     & 4.06      & \textbf{57.71} \\ \hline
+2       & yes       & no        & 0.01      & 5         & 4.10      & 60.50     & 4.06      & 58.09 \\ \hline
+3       & no        & yes       & 0.01      & 4         & 4.11      & 60.73     & 4.07      & 58.68 \\ \hline
+4       & yes       & yes       & 0.01      & 4         & 4.10      & 60.56     & 4.06      & 58.25 \\ \hline
+5       & no        & no        & 0.1       & 1         & 4.09      & 60.02     & 4.06      & 57.73 \\ \hline
+6       & yes       & no        & 0.1       & 1         & 4.11      & 60.79     & 4.06      & 58.25 \\ \hline
+7       & no        & yes       & 0.1       & 1         & 4.11      & 60.80     & 4.07      & 58.74 \\ \hline
+8       & yes       & yes       & 0.1       & 1         & 4.11      & 60.65     & 4.07      & 58.33 \\ \hline
 \end{tabular}
+\label{table:experiments:neural_odes}
 \end{table}
 
 
 \subsection{Continuous Normalizing Flows}
 
-
 \subsubsection{Basic CNFs}
 
-\begin{table}[]
-\centering
-\caption{Results from training CNFs on top of a pretrained AWD-LSTM word-based model.}
-\begin{tabular}{|l|l|l|l|l|l|l|l|}
-\hline
-\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl}  \\ \hline
-no        & no        & 0.1       & 152       & 4.12      & 61.56     & 4.07      & 58.80 \\ \hline
-yes       & no        & 0.1       & 160       & 4.15      & 63.20     & 4.11      & 60.97 \\ \hline
-no        & yes       & 0.1       & 80        & 4.11      & 60.65     & 4.07      & 58.53 \\ \hline
-yes       & yes       & 0.1       & 44        & 4.10      & 60.51     & 4.06      & 58.21 \\ \hline
-no        & no        & 1         & 73        & 410       & 60.58     & 4.06      & 57.88 \\ \hline
-yes       & no        & 1         & 43        & 4.11      & 60.98     & 4.07      & 58.28 \\ \hline
-no        & yes       & 1         & 27        & 4.11      & 61.06     & 4.07      & 58.75 \\ \hline
-yes       & yes       & 1         & 21        & 4.12      & 61.31     & 4.08      & 58.88 \\ \hline
+This is the most simple model based on Continuous Normalizing Flows and is explained in section \ref{section:cnf_lm:cnfs_ce}. It is more efficient in terms of speed, however theoretically less expressive than the Context Conditioned CNFs model, as it still suffers from both limitations mentioned in chapter \ref{chapter:limitations}. Nonetheless, using the flexibility of CNFs in addition to the base models, seem to be beneficial as the model manages to improve on some of the baselines.
 
+In the experiments, the neural network's architecture, that specifies the differential equation is defined as
+
+\begin{displaymath}
+    f(l, \ t) = W \ Softplus(W_f^T 
+        \begin{bmatrix}
+           l \\
+           t \\
+        \end{bmatrix}),
+        \ W_f \in R^{d+1 \ \times \ d}, \ W \in R^{d \ \times \ d},
+\end{displaymath}
+
+where $ d $ is the dimensionality of the embeddings. The hyperparameters being used are the latest hyperparameters proposed in the corresponding repositories of the baseline models.
+
+The results of using CNFs on top of a pre-trained AWD-LSTM model can be seen in table \ref{table:experiments:awd_cnf}. The results of using CNFs on top of a pre-trained MoS model can be seen in table \ref{table:experiments:mos_cnf}. Finally, the results of using CNFs on top of a pre-trained DoC model can be seen in table \ref{table:experiments:doc_cnf}.
+
+\begin{table}
+\centering
+\caption{Results from training CNFs on top of a pre-trained AWD-LSTM word-based model. Experiment 3 improves on the baseline by 0.3 perplexity points. The perplexities on the validation and test sets for this experiment, can be seen in bold.}
+
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{\#} & \textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl}  \\ \hline
+1       & no        & no        & 0.1       & 152       & 4.12      & 61.56     & 4.07      & 58.80 \\ \hline
+2       & yes       & no        & 0.1       & 160       & 4.15      & 63.20     & 4.11      & 60.97 \\ \hline
+3       & no        & yes       & 0.1       & 80        & 4.11      & \textbf{60.65}     & 4.07      & \textbf{58.53} \\ \hline
+4       & yes       & yes       & 0.1       & 44        & 4.10      & 60.51     & 4.06      & 58.21 \\ \hline
+5       & no        & no        & 1         & 73        & 410       & 60.58     & 4.06      & 57.88 \\ \hline
+6       & yes       & no        & 1         & 43        & 4.11      & 60.98     & 4.07      & 58.28 \\ \hline
+7       & no        & yes       & 1         & 27        & 4.11      & 61.06     & 4.07      & 58.75 \\ \hline
+8       & yes       & yes       & 1         & 21        & 4.12      & 61.31     & 4.08      & 58.88 \\ \hline
 \end{tabular}
+\label{table:experiments:awd_cnf}
 \end{table}
 
 
-\begin{table}[]
+\begin{table}
 \centering
-\caption{Results from training CNFs on top of a pretrained MoS word-based model.}
-\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\caption{Results from training CNFs on top of a pre-trained MoS word-based model. Experiments 3, 4 and 8 manage to improve on the baseline. Their perplexities on the test and validation set can be seen in bold. For this particular model, freezing the transferred weights of the MoS model and only training the CNF weights results in lower perplexity values.}
+
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
 \hline
-\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
-no        & no        & 0.01      & 61        & 4.07      & 58.62     & 4.03      & 56.45 \\ \hline
-yes       & no        & 0.01      & 58        & 4.06      & 57.80     & 4.02      & 55.46 \\ \hline
-no        & yes       & 0.01      & 355       & 4.06      & 57.70     & 4.02      & 55.78 \\ \hline
-yes       & yes       & 0.01      & 338       & 4.04      & 56.65     & 4.00      & 54.53 \\ \hline
-no        & no        & 0.1       & 7         & 4.09      & 59.49     & 4.05      & 57.29 \\ \hline
-yes       & no        & 0.1       & 7         & 4.07      & 58.77     & 4.03      & 56.35 \\ \hline
-no        & yes       & 0.1       & 62        & 4.05      & 57.56     & 4.02      & 55.68 \\ \hline
-yes       & yes       & 0.1       & 62        & 4.03      & 56.50     & 4.00      & 54.42 \\ \hline
+\textbf{\#} & \textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+1       & no        & no        & 0.01      & 61        & 4.07      & 58.62     & 4.03      & 56.45 \\ \hline
+2       & yes       & no        & 0.01      & 58        & 4.06      & 57.80     & 4.02      & 55.46 \\ \hline
+3       & no        & yes       & 0.01      & 355       & 4.06      & \textbf{57.70}     & 4.02      & \textbf{55.78} \\ \hline
+4       & yes       & yes       & 0.01      & 338       & 4.04      & \textbf{56.65}     & 4.00      & \textbf{54.53} \\ \hline
+5       & no        & no        & 0.1       & 7         & 4.09      & 59.49     & 4.05      & 57.29 \\ \hline
+6       & yes       & no        & 0.1       & 7         & 4.07      & 58.77     & 4.03      & 56.35 \\ \hline
+7       & no        & yes       & 0.1       & 62        & 4.05      & 57.56     & 4.02      & 55.68 \\ \hline
+8       & yes       & yes       & 0.1       & 62        & 4.03      & \textbf{56.50}     & 4.00      & \textbf{54.42} \\ \hline
 \end{tabular}
+\label{table:experiments:mos_cnf}
 \end{table}
 
-\begin{table}[]
+\begin{table}
 \centering
-\caption{Results from training CNFs on top of a pretrained DoC word-based model.}
-\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\caption{Results from training CNFs on top of a pre-trained DoC word-based model. None of the experiments improve on the baselines. Similarly to previous experiments, smaller learning rates and freezing the transferred weights of the base model achieves lower perplexity values.}
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
 \hline
-\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
-no           & no     & 0.05 & 11 & 4.04  & 56.69 & 4.00  & 54.54 \\ \hline
-yes          & no     & 0.05 & 8  & 4.03  & 56.05 & 3.99  & 54.15 \\ \hline
-no           & yes    & 0.05 & 81 & 4.02  & 55.55 & 3.98  & 53.59 \\ \hline
-yes          & yes    & 0.05 & 64 & 4.00  & 54.79 & 3.97  & 53.02 \\ \hline
-no           & no     & 0.1  & 11 & 4.05  & 57.16 & 4.00  & 54.85 \\ \hline
+\textbf{\#} & \textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+1       & no           & no     & 0.05 & 11 & 4.04  & 56.69 & 4.00  & 54.54 \\ \hline
+2       & yes          & no     & 0.05 & 8  & 4.03  & 56.05 & 3.99  & 54.15 \\ \hline
+3       & no           & yes    & 0.05 & 81 & 4.02  & 55.55 & 3.98  & 53.59 \\ \hline
+4       & yes          & yes    & 0.05 & 64 & 4.00  & 54.79 & 3.97  & 53.02 \\ \hline
+5       & no           & no     & 0.1  & 11 & 4.05  & 57.16 & 4.00  & 54.85 \\ \hline
 % yes          & no     & 0.1  &    &       &       &       &       \\ \hline
-no           & yes    & 0.1  & 43 & 4.02  & 55.63 & 3.98  & 53.66 \\ \hline
-yes          & yes    & 0.1  & 46 & 4.00  & 54.86 & 3.97  & 53.14 \\ \hline
-no           & no     & 1    & 49 & 4.06  & 57.84 & 4.01  & 55.14 \\ \hline
+6       & no           & yes    & 0.1  & 43 & 4.02  & 55.63 & 3.98  & 53.66 \\ \hline
+7       & yes          & yes    & 0.1  & 46 & 4.00  & 54.86 & 3.97  & 53.14 \\ \hline
+8       & no           & no     & 1    & 49 & 4.06  & 57.84 & 4.01  & 55.14 \\ \hline
 % yes          & no     & 1    &    &       &       &       &       \\ \hline
-no           & yes    & 1    & 11 & 4.07  & 58.62 & 4.04  & 56.58 \\ \hline
-yes          & yes    & 1    & 15 & 4.06  & 58.00 & 4.03  & 56.10 \\ \hline
+9       & no           & yes    & 1    & 11 & 4.07  & 58.62 & 4.04  & 56.58 \\ \hline
+10       & yes          & yes    & 1    & 15 & 4.06  & 58.00 & 4.03  & 56.10 \\ \hline
 \end{tabular}
+\label{table:experiments:doc_cnf}
 \end{table}
 
 
 \subsubsection{Context Conditioned CNFs}
 
-Due to the issues discussed in section \ref{section:cnf_lm:issues_cc_cnfs} all word-based Context Conditioned CNFs are trained using Importance Sampling. In every training iteration 20 labels are obtained from the unigram distribution of the training set and are concatenated to the true label. This drastically speeds up training, however evaluating on the original validation and test set is still not feasible. Therefore, when evaluating Context Conditioned CNFs, only the first 400 samples from the validation and the test set are used.
+Due to the issues discussed in section \ref{section:cnf_lm:issues_cc_cnfs} all word-based Context Conditioned CNFs are trained using Importance Sampling. In every training iteration, 20 labels are obtained from the unigram distribution of the training set and are concatenated to the true label. This drastically speeds up training, however evaluating on the original validation and test sets remains unfeasible. Therefore, when evaluating Context Conditioned CNFs, only the first 400 samples from the validation and the test sets are used.
 
-Furthermore, the RNN base of the models is initialized with the weights of a pretrained AWD-LSTM model.
+The hyperparameters being used are the latest hyperparameters proposed in the official MoS repository. Furthermore, the RNN base of the model is initialized with the weights of a pre-trained AWD-LSTM model. Additionally, the architecture of the neural network, that specifies the differential equation, in the experiments is defined as
 
-\begin{table}[]
+\begin{align*}
+    f(l, \ t, \ h) &= W \ Softplus(W_f^T 
+        \begin{bmatrix}
+           l \\
+           t \\
+        \end{bmatrix} + W_h h) \\
+        W_f &\in R^{d+1 \ \times \ d} \\ 
+        W, W_h &\in R^{d \ \times \ d},
+\end{align*}
+
+where $ l $ are the logits, $ t $ is time, $ h $ is the final hidden state obtained from the AWD-LSTM base and $W, \ W_f $ and $ W_h $ are trainable parameters. The results can be seen in table \ref{table:experiments:cnfh_word}. Additionally, for fair comparison, table \ref{table:experiments:awd_mini_eval} contains metrics for the AWD-LSTM model, computed on the first 400 samples of the validation and test sets.
+
+\begin{table}
 \centering
-\caption{Results from training Context Conditioned CNFs on top of a pretrained word-based AWD-LSTM model.}
-\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\caption{Results from training Context Conditioned CNFs on top of a pre-trained word-based AWD-LSTM model. The perplexities are computed only on the first 400 samples of the validation and test set. No experiment improves on the baseline in table \ref{table:experiments:awd_mini_eval}. However, the baseline model was trained by evaluating the full partition function of the Softmax, and this model is trained by randomly sampling 20 labels from the unigram distribution of the training set in every iteration. Due to the small number of labels in every iteration and the randomness, a lot more epochs are needed to reach or improve on the performance of the baseline model.}
+
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
 \hline
-\textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
-no           & no     & 0.1 &    &       &      &       &      \\ \hline
-yes          & no     & 0.1 &    &       &      &       &      \\ \hline
-no           & yes    & 0.1 &    &       &      &       &      \\ \hline
-yes          & yes    & 0.1 &    &       &      &       &      \\ \hline
-no           & no     & 1   &    &       &      &       &      \\ \hline
-yes          & no     & 1   &    &       &      &       &      \\ \hline
-no           & yes    & 1   &    &       &      &       &      \\ \hline
-yes          & yes    & 1   &    &       &      &       &      \\ \hline
+\textbf{\#} & \textbf{prefinetuned} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vppl} & \textbf{tloss} & \textbf{tppl} \\ \hline
+1       & no        & no        & 0.01      & 84        & 4.12      & 61.45     & 3.93      & 51.09 \\ \hline
+2       & yes       & no        & 0.01      & 84        & 4.10      & 60.52     & 3.96      & 52.48 \\ \hline
+3       & no        & yes       & 0.01      & 46        & 4.12      & 61.72     & 3.94      & 51.35 \\ \hline
+4       & yes       & yes       & 0.01      & 46        & 4.10      & 60.14     & 3.96      & 52.58 \\ \hline
+5       & no        & no        & 0.1       & 52        & 4.11      & 61.15     & 3.94      & 51.51 \\ \hline
+6       & yes       & no        & 0.1       & 45        & 4.10      & 60.64     & 3.96      & 52.48 \\ \hline
+7       & no        & yes       & 0.1       & 24        & 4.13      & 62.22     & 3.95      & 52.14 \\ \hline
+8       & yes       & yes       & 0.1       & 24        & 4.11      & 60.85     & 3.95      & 52.00 \\ \hline
 \end{tabular}
+\label{table:experiments:cnfh_word}
+\end{table}
+
+\begin{table}
+\centering
+\caption{Perplexities of the baseline word-based AWD-LSTM model computed on the first 400 samples of the validation and test sets.}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{model} & \textbf{vloss} & \textbf{vppl}  & \textbf{tloss} & \textbf{tppl}  \\ \hline
+AWD   & 4.09  & 59.64 & 3.92  & 50.30 \\ \hline
+\end{tabular}
+\label{table:experiments:awd_mini_eval}
 \end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Character Based Models}
 
-Training character-based models on Penn Tree Bank \citet{mikolov2011empirical} was performed using same preprocessing is used as when training word-based model. This means that only the 10000 most frequent words are kept, and all others are substituted with an \textless unk\textgreater \ token. This drastically reduces the number of possible transitions between characters and simplifies the problem.
+Training character-based models on Penn Tree Bank \citet{mikolov2011empirical} is performed using same pre-processing as when training word-based models. This means that only the 10000 most frequent words are kept, and all others are substituted with an \textless unk\textgreater \ token. This drastically reduces the number of possible transitions between characters and simplifies the problem.
 
-Additionall using Context Conditioned CNFs for character models the size of the vocabulary is usually less than 50. Therefore, character based Context Conditioned CNFs do not suffer from the issues mentioned in section \ref{section:cnf_lm:issues_cc_cnfs} and are trained using the entire vocabulary.
+Additionally, when using Context Conditioned CNFs for character models the size of the vocabulary is usually less than 50. Therefore, character based Context Conditioned CNFs do not suffer from the issues mentioned in section \ref{section:cnf_lm:issues_cc_cnfs} and are trained using the entire vocabulary.
 
-For character-based models only one baseline was used, the AWD-LSTM \citep{merity2017regularizing} model. Similar to the word-based models, the lates hyperparameters proposed in the official github repo were used. Exact reproduction of the results in their paper was not possible due to differences in PyTorch versions. The baseline results can be seen in table \ref{table:experiments:baselines_char}.
+For character-based models only the AWD-LSTM \citep{merity2017regularizing} mode was used as a baseline. Similarly to the word-based models, the latest hyperparameters proposed in the official github repository were used. Exact reproduction of the results was not possible due to differences in PyTorch versions. The baseline results can be seen in table \ref{table:experiments:baselines_char}.
 
-Evaluating the full partition function, even though feasible, is still not fast enough to train these models from scratch. Therefore, similarly to the case of word-based models, the RNN weights are initialized with the weights of the pretrained baseline AWD-LSTM model. The results can be seen in table \ref{table:experiments:cnfh_characters}.
+Evaluating the full partition function, even though feasible, is still not fast enough to train these models from scratch. Therefore, similarly to the case of word-based models, the RNN weights are initialized with the weights of the pre-trained baseline AWD-LSTM model. The results can be seen in table \ref{table:experiments:cnfh_characters}.
 
-\begin{table}[]
+\begin{table}
 \centering
 \caption{Results from training baseline character-based models.}
 \begin{tabular}{|l|l|l|l|l|l|l|l|l|l|}
 \hline
 \textbf{model} & \textbf{h} & \textbf{lasth} & \textbf{emb} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vbpc} & \textbf{tloss} & \textbf{tbpc} \\ \hline
-awd       & 1000       & 200            & 200          & 0.002       & 364         & 0.84           & 1.211         & 0.82           & 1.183         \\ \hline
+awd       & 1000       & 200            & 200          & 0.002       & 364         & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
 \end{tabular}
 \label{table:experiments:baselines_char}
 \end{table}
 
-\begin{table}[]
+\begin{table}
 \centering
-\caption{Results from training Context Conditioned CNFs on top of a pretrained character-based AWD-LSTM model.}
-\begin{tabular}{|l|l|l|l|l|l|l|}
+\caption{Results from training Context Conditioned CNFs on top of a pre-trained character-based AWD-LSTM model. Most of the experiments reach same performance as the baseline model. An issue with training Context Conditioned CNF's with transferred weights is the possibility of initializing the model in a local minimum. This means that the CNF learns weights almost equal to 0, in order to retrieve the initial distribution from the baseline model.}
+
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
 \hline
-\textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vbpc} & \textbf{tloss} & \textbf{tbpc} \\ \hline
-yes             & 1e-5        & 55          & 0.84           & 1.213         & 0.82           & 1.184         \\ \hline
-no              & 1e-4        & 15          & 0.84           & 1.212         & 0.82           & 1.182         \\ \hline
-yes             & 1e-4        & 28          & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
-no              & 2e-3        & 1           & 0.92           & 1.329         & 0.90           & 1.295         \\ \hline
-yes             & 2e-3        & 3           & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
+\textbf{\#} & \textbf{freeze} & \textbf{lr} & \textbf{ep} & \textbf{vloss} & \textbf{vbpc} & \textbf{tloss} & \textbf{tbpc} \\ \hline
+1       & yes             & 1e-5        & 55          & 0.84           & 1.213         & 0.82           & 1.184         \\ \hline
+2       & no              & 1e-4        & 15          & 0.84           & 1.212         & 0.82           & 1.182         \\ \hline
+3       & yes             & 1e-4        & 28          & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
+4       & no              & 2e-3        & 1           & 0.92           & 1.329         & 0.90           & 1.295         \\ \hline
+5       & yes             & 2e-3        & 3           & 0.84           & 1.212         & 0.82           & 1.183         \\ \hline
 \end{tabular}
 \label{table:experiments:cnfh_characters}
 \end{table}
